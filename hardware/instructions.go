@@ -1564,4 +1564,333 @@ var Instructions = [256]instruction{
 		2,
 		2,
 		rel,},
+	// CMP - (Indirect), Y
+	instruction{
+		"CMP",
+		0xD1,
+		2,
+		5,
+		indY,},
+	// KIL - Implied 
+	instruction{
+		"KIL",
+		0xD2,
+		1,
+		0,
+		impl,},
+	// DCP - (Indirect), Y 
+	instruction{
+		"DCP",
+		0xD3,
+		2,
+		8,
+		indY,},
+	// NOP - Zero Page X 
+	instruction{
+		"NOP",
+		0xD4,
+		2,
+		4,
+		zpgX,},
+	// CMP - Zero Page X 
+	instruction{
+		"CMP",
+		0xD5,
+		2,
+		4,
+		zpgX,},
+	// DEC - Zero Page X 
+	instruction{
+		"DEC",
+		0xD6,
+		2,
+		6,
+		zpgX,},
+	// DCP - Zero Page X 
+	instruction{
+		"DCP",
+		0xD7,
+		2,
+		6,
+		zpgX,},
+	// CLD - Implied 
+	instruction{
+		"CLD",
+		0xD8,
+		1,
+		2,
+		impl,},
+	// CMP - Absolute Y
+	instruction{
+		"CMP",
+		0xD9,
+		3,
+		4,
+		absY,},
+	// NOP - Implied 
+	instruction{
+		"NOP",
+		0xDA,
+		1,
+		2,
+		impl,},
+	// DCP - Absolute Y
+	instruction{
+		"DCP",
+		0xDB,
+		3,
+		7,
+		absY,},
+	// NOP - Absolute X
+	instruction{
+		"NOP",
+		0xDC,
+		3,
+		4,
+		absX,},
+	// CMP - Absolute X
+	instruction{
+		"CMP",
+		0xDD,
+		3,
+		4,
+		absX,},
+	// DEC - Absolute X
+	instruction{
+		"DEC",
+		0xDE,
+		3,
+		7,
+		absX,},
+	// DCP - Absolute X
+	instruction{
+		"DCP",
+		0xDF,
+		3,
+		7,
+		absX,},
+	// CPX - Immediate 
+	instruction{
+		"CPX",
+		0xE0,
+		2,
+		2,
+		imm,},
+	// SBC - (Indirect, X) 
+	instruction{
+		"SBC",
+		0xE1,
+		2,
+		6,
+		indX,},
+	// NOP - Immediate 
+	instruction{
+		"NOP",
+		0xE2,
+		2,
+		2,
+		imm,},
+	// ISC - (Indirect, X) 
+	instruction{
+		"ISC",
+		0xE3,
+		2,
+		8,
+		indX,},
+	// CPX - Zero Page 
+	instruction{
+		"CPX",
+		0xE4,
+		2,
+		3,
+		zpg,},
+	// SBC - Zero Page 
+	instruction{
+		"SBC",
+		0xE5,
+		2,
+		3,
+		zpg,},
+	// INC - Zero Page 
+	instruction{
+		"INC",
+		0xE6,
+		2,
+		5,
+		zpg,},
+	// ISC - Zero Page 
+	instruction{
+		"ISC",
+		0xE7,
+		2,
+		5,
+		zpg,},
+	// INX - Implied 
+	instruction{
+		"INX",
+		0xE8,
+		1,
+		2,
+		impl,},
+	// SBC - Immediate 
+	instruction{
+		"SBC",
+		0xE9,
+		2,
+		2,
+		imm,},
+	// NOP - Implied
+	instruction{
+		"NOP",
+		0xEA,
+		1,
+		2,
+		impl,},
+	// SBC - Immediate 
+	instruction{
+		"SBC",
+		0xEB,
+		2,
+		2,
+		imm,},
+	// CPX - Absolute 
+	instruction{
+		"CPX",
+		0xEC,
+		3,
+		4,
+		abs,},
+	// SBC - Absolute 
+	instruction{
+		"SBC",
+		0xED,
+		3,
+		4,
+		abs,},
+	// INC - Absolute 
+	instruction{
+		"INC",
+		0xEE,
+		3,
+		6,
+		abs,},
+	// ISC - Absolute 
+	instruction{
+		"ISC",
+		0xEF,
+		3,
+		6,
+		abs,},
+	// BEQ - Relative 
+	instruction{
+		"BEQ",
+		0xF0,
+		2,
+		2,
+		rel,},
+	// SBC - (Indirect), Y
+	instruction{
+		"SBC",
+		0xF1,
+		2,
+		5,
+		indY,},
+	// KIL - Implied 
+	instruction{
+		"KIL",
+		0xF2,
+		1,
+		0,
+		impl,},
+	// ISC - (Indirect), Y 
+	instruction{
+		"ISC",
+		0xF3,
+		2,
+		8,
+		indY,},
+	// NOP - Zero Page X 
+	instruction{
+		"NOP",
+		0xF4,
+		2,
+		4,
+		zpgX,},
+	// SBC - Zero Page X 
+	instruction{
+		"SBC",
+		0xF5,
+		2,
+		4,
+		zpgX,},
+	// INC - Zero Page X 
+	instruction{
+		"INC",
+		0xF6,
+		2,
+		6,
+		zpgX,},
+	// ISC - Zero Page X 
+	instruction{
+		"ISC",
+		0xF7,
+		2,
+		6,
+		zpgX,},
+	// SED - Implied 
+	instruction{
+		"SED",
+		0xF8,
+		1,
+		2,
+		impl,},
+	// SBC - Absolute Y
+	instruction{
+		"SBC",
+		0xF9,
+		3,
+		4,
+		absY,},
+	// NOP - Implied 
+	instruction{
+		"NOP",
+		0xFA,
+		1,
+		2,
+		impl,},
+	// ISC - Absolute Y
+	instruction{
+		"ISC",
+		0xFB,
+		3,
+		7,
+		absY,},
+	// NOP - Absolute X
+	instruction{
+		"NOP",
+		0xFC,
+		3,
+		4,
+		absX,},
+	// SBC - Absolute X
+	instruction{
+		"SBC",
+		0xFD,
+		3,
+		4,
+		absX,},
+	// INC - Absolute X 
+	instruction{
+		"INC",
+		0xFE,
+		3,
+		7,
+		absX,},
+	// ISC - Absolute X
+	instruction{
+		"ISC",
+		0xFF,
+		3,
+		7,
+		absX,},
 }
