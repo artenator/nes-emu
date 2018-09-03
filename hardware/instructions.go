@@ -1557,4 +1557,11 @@ var Instructions = [256]instruction{
 		3,
 		6,
 		abs,},
+	// BNE - Relative 
+	instruction{
+		"BNE",
+		0xD0,
+		2,
+		2,
+		rel,},
 }
