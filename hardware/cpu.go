@@ -2,6 +2,7 @@ package hardware
 
 import (
 	"log"
+	"encoding/binary"
 )
 
 // cpu speed
@@ -27,6 +28,9 @@ type Cpu struct {
 	// 7 6 5 4 3 2 1 0
 	// N V   B D I Z C
 	P uint8
+
+	// Memory
+	Memory [0xFFFF]byte
 }
 
 // CPURunInstr Runs cpu instruction
@@ -37,4 +41,11 @@ func CPURunInstr(instr [2]byte) {
 
 	log.Println(Instructions[opcode])
 
+}
+
+func (cpu *Cpu) Reset() {
+	// Read first instruction location
+	firstInstruction := binary.LittleEndian.Uint16(cpu.Memory[0xFFFC:0xFFFE])
+
+	log.Printf("%x", firstInstruction)
 }
