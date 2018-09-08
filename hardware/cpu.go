@@ -46,6 +46,10 @@ func CPURunInstr(instr [2]byte) {
 func (cpu *Cpu) Reset() {
 	// Read first instruction location
 	firstInstruction := binary.LittleEndian.Uint16(cpu.Memory[0xFFFC:0xFFFE])
+	firstInstructionOpcode := cpu.Read8(firstInstruction)
 
-	log.Printf("%x", firstInstruction)
+	log.Printf("First Instruction is at address %x", firstInstruction)
+	log.Printf("First Instruction has opcode %x", firstInstructionOpcode)
+	log.Println("First opcode is ")
+	log.Println(Instructions[firstInstructionOpcode])
 }

@@ -14,7 +14,7 @@ func main() {
 	if err != nil {
 		log.Println(err)
 	} else {
-                cpu.LoadCartridge(cart)
+		cpu.LoadCartridge(cart)
 		//log.Println(cart)
 		log.Println(cpu.Memory)
 		cpu.Reset()
