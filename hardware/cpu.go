@@ -33,19 +33,9 @@ type Cpu struct {
 	Memory [0xFFFF]byte
 }
 
-// CPURunInstr Runs cpu instruction
-func CPURunInstr(instr [2]byte) {
-	opcode := instr[0]
-
-	log.Printf("Received instruction %d\n", int(opcode))
-
-	log.Println(Instructions[opcode])
-
-}
-
 func (cpu *Cpu) Reset() {
 	// Read first instruction address location
-	firstInstruction := binary.LittleEndian.Uint16(cpu.Memory[0xFFFC:0xFFFE])
+	firstInstruction := cpu.Read16(0xFFFC)
 	// Set the PC to be at the address
 	cpu.PC = firstInstruction
 	
@@ -56,6 +46,9 @@ func (cpu *Cpu) Reset() {
 	log.Println("First opcode is ")
 	log.Printf("%+v\n", Instructions[firstInstructionOpcode])
 
-	cpu.CPY(Instructions[0xCD])
+	log.Println(cpu.Memory[cpu.PC + 1])
+
+	cpu.RunInstruction(Instructions[0x69])
+	cpu.RunInstruction(Instructions[0x0A])
 	log.Printf("%+v\n", cpu)
 }

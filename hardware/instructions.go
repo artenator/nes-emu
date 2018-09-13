@@ -1109,7 +1109,7 @@ var Instructions = [256]instruction{
 		3,
 		4,
 		abs,},
-	// BCC - Absolute 
+	// BCC - Relative 
 	instruction{
 		"BCC",
 		0x90,

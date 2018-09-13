@@ -7,7 +7,6 @@ func main() {
 	log.Println("Arte's NES Emu")
 	// create cpu
 	cpu := hardware.Cpu{}
-	hardware.CPURunInstr([2]byte{32, 12})
 
 	cart, err := hardware.CreateCartridge("donkey-kong.nes")
 
