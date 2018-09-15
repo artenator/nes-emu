@@ -2,7 +2,6 @@ package hardware
 
 import (
 	"log"
-	"encoding/binary"
 )
 
 // cpu speed
@@ -46,9 +45,11 @@ func (cpu *Cpu) Reset() {
 	log.Println("First opcode is ")
 	log.Printf("%+v\n", Instructions[firstInstructionOpcode])
 
-	log.Println(cpu.Memory[cpu.PC + 1])
+	for true {
+		opcode := cpu.Read8(cpu.PC)
+		cpu.RunInstruction(Instructions[opcode])
+	}
 
-	cpu.RunInstruction(Instructions[0x69])
-	cpu.RunInstruction(Instructions[0x0A])
+	// print the whole CPU and memory!!
 	log.Printf("%+v\n", cpu)
 }

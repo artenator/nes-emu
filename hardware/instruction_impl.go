@@ -49,6 +49,15 @@ func (cpu *Cpu) clearOverflow() {
 	cpu.P &= 0xBF
 }
 
+// setInterrupt - Sets the Interrupt disable bit on the cpu
+func (cpu *Cpu) setInterrupt() {
+	cpu.P |= 0x04
+}
+
+// clearInterrup - Clear the Interrupt disable bit on the cpu
+func (cpu *Cpu) clearInterrupt() {
+	cpu.P &= 0xFB
+}
 
 func (cpu *Cpu) doRelativeBranch(value uint8) {
 	if value >= 0x80 {
@@ -142,6 +151,16 @@ func (cpu *Cpu) RunInstruction(instr instruction) {
 		cpu.AND(instr, addr, value)
 	case "ASL":
 		cpu.ASL(instr, addr, value)
+	case "BCC":
+		cpu.BCC(instr, addr, value)
+	case "BCS":
+		cpu.BCS(instr, addr, value)
+	case "BEQ":
+		cpu.BEQ(instr, addr, value)
+	case "BIT":
+		cpu.BIT(instr, addr, value)
+	case "SEI":
+		cpu.SEI(instr, addr, value)
 	default:
                 log.Fatal(errors.New("Fatal" + string(instr.assemblyCode) + " is not a valid instruction code."))
 	}
@@ -162,8 +181,13 @@ func (cpu *Cpu) ADC(instr instruction, addr uint16, value uint8) {
 	} else {
 		cpu.clearCarry()
 	}
-
-	if 
+	
+	// Set the overflow flag
+	if ((cpu.A ^ result) & (value ^ result) & 0x80) > 0 {
+		cpu.setOverflow()
+	} else {
+		cpu.clearOverflow()
+	}
 
 	// Set the zero flag if the result is zero
 	if result == 0 {
@@ -251,6 +275,14 @@ func (cpu *Cpu) ASL(instr instruction, addr uint16, value uint8) {
 	
 }
 
+// BCC - Branch if Carry Clear
+// If carry bit is clear, cause a relative branch to occur
+func (cpu *Cpu) BCC(instr instruction, addr uint16, value uint8) {
+	if getBit(cpu.P, 0) == 0 {
+		cpu.doRelativeBranch(value)
+	}
+}
+
 // BCS - Branch if Carry Set
 // If carry bit is set, cause a relative branch to occur
 func (cpu *Cpu) BCS(instr instruction, addr uint16, value uint8) {
@@ -273,7 +305,35 @@ func (cpu *Cpu) BEQ(instr instruction, addr uint16, value uint8) {
 func (cpu *Cpu) BIT(instr instruction, addr uint16, value uint8) {
 	result := cpu.A & value
 
-        
+	// Set zero flag if result is 0
+        if result == 0 {
+		cpu.setZero()
+	} else {
+		cpu.clearZero()
+	}
+
+	// Set Overflow to bit 6
+	if getBit(result, 6) == 1 {
+		cpu.setOverflow()
+	} else {
+		cpu.clearOverflow()
+	}
+
+	// Set the sign bit if bit 7 is 1
+	if getBit(result, 7) > 0 {
+		cpu.setNegative()
+	} else {
+		cpu.clearNegative()
+	}
+}
+
+// BMI - Branch if Minus
+// If the negative flag is set, then do a relative branch
+func (cpu *Cpu) BMI(instr instruction, addr uint16, value uint8) {
+	// check if negative flag is set
+	if getBit(cpu.P, 7) > 0 {
+		cpu.doRelativeBranch(value)
+	}
 }
 
 // CPY - Compare Y Register
@@ -305,4 +365,12 @@ func (cpu *Cpu) CPY(instr instruction, addr uint16, value uint8) {
 	} else {
 		cpu.clearNegative()
 	}
+}
+
+// SEI - Set Interrupt Disable
+// Sets the interrupt disable flag to one
+func (cpu *Cpu) SEI(instr instruction, addr uint16, value uint8) {
+	log.Println("SEI")
+	
+	cpu.setInterrupt()
 }
