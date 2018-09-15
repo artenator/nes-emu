@@ -54,9 +54,29 @@ func (cpu *Cpu) setInterrupt() {
 	cpu.P |= 0x04
 }
 
-// clearInterrup - Clear the Interrupt disable bit on the cpu
+// clearInterrupt - Clear the Interrupt disable bit on the cpu
 func (cpu *Cpu) clearInterrupt() {
 	cpu.P &= 0xFB
+}
+
+// setBreak
+func (cpu *Cpu) setBreak() {
+	cpu.P |= 0x10
+}
+
+// clearBreak
+func (cpu *Cpu) clearBreak() {
+	cpu.P &= 0xEF
+}
+
+// setDecimal
+func (cpu *Cpu) setDecimal() {
+	cpu.P |= 0x08
+}
+
+// clearDecimal
+func (cpu *Cpu) clearDecimal() {
+	cpu.P &= 0xF7
 }
 
 func (cpu *Cpu) doRelativeBranch(value uint8) {
@@ -139,7 +159,7 @@ func (cpu *Cpu) RunInstruction(instr instruction) {
 		addr = 0
                 value = 0
 	default:
-		log.Fatal(errors.New("Fatal" + string(instr.mode) + " is not a valid addressing mode."))
+		log.Fatal(errors.New("Fatal: " + string(instr.mode) + " is not a valid addressing mode."))
 	}
 
 	switch instr.assemblyCode {
@@ -162,7 +182,7 @@ func (cpu *Cpu) RunInstruction(instr instruction) {
 	case "SEI":
 		cpu.SEI(instr, addr, value)
 	default:
-                log.Fatal(errors.New("Fatal" + string(instr.assemblyCode) + " is not a valid instruction code."))
+                log.Fatal(errors.New("Fatal: " + string(instr.assemblyCode) + " is not a valid instruction code."))
 	}
 }
 
@@ -211,8 +231,6 @@ func (cpu *Cpu) ADC(instr instruction, addr uint16, value uint8) {
 // Performs a logical and on the acc
 // sets flags ZN
 func (cpu *Cpu) AND(instr instruction, addr uint16, value uint8) {
-	log.Println("AND")
-
         // Calculate the result
 	result := cpu.A & value
 
@@ -336,24 +354,86 @@ func (cpu *Cpu) BMI(instr instruction, addr uint16, value uint8) {
 	}
 }
 
-// CPY - Compare Y Register
-// Performs a subtraction on Y register and src.
-// Sets flags accordingly. ZCN
-func (cpu *Cpu) CPY(instr instruction, addr uint16, value uint8) {
-	log.Println("CPY")
+// BNE - Branch Not Equal
+// If the zero flag is clear, then do a relative branch
+func (cpu *Cpu) BNE(instr instruction, addr uint16, value uint8) {
+	// check if negative flag is set
+	if getBit(cpu.P, 1) == 0 {
+		cpu.doRelativeBranch(value)
+	}
+}
 
+// BPL - Branch if Positive
+// If the negative flag is clear, then do a relative branch
+func (cpu *Cpu) BPL(instr instruction, addr uint16, value uint8) {
+	// check if negative flag is set
+	if getBit(cpu.P, 7) > 0 {
+		cpu.doRelativeBranch(value)
+	}
+}
+
+// BRK - Force Interrupt
+// forces generation of an interrupt request
+// sets break command flag
+func (cpu *Cpu) BRK(instr instruction, addr uint16, value uint8) {
+	// push program counter and processor status to stack
+	cpu.Push16(cpu.PC)
+
+	cpu.setBreak()
+	cpu.Push8(cpu.P)
+
+	cpu.setInterrupt()
+	
+	cpu.PC = cpu.Read16(0xFFFE)
+}
+
+// BVC - Branch if overflow clear
+func (cpu *Cpu) BVC(instr instruction, addr uint16, value uint8) {
+	if getBit(cpu.P, 6) == 0 {
+		cpu.doRelativeBranch(value)
+	}
+}
+
+// BVS - Branch if overflow clear
+func (cpu *Cpu) BVS(instr instruction, addr uint16, value uint8) {
+	if getBit(cpu.P, 6) > 0 {
+		cpu.doRelativeBranch(value)
+	}
+}
+
+// CLC - set the carry flag to zero
+func (cpu *Cpu) CLC(instr instruction, addr uint16, value uint8) {
+	cpu.clearCarry()
+}
+
+// CLD - clear decimal mode
+func (cpu *Cpu) CLD(instr instruction, addr uint16, value uint8) {
+	cpu.clearDecimal()
+}
+
+// CLI - clear interrupt disable flag
+func (cpu *Cpu) CLI(instr instruction, addr uint16, value uint8) {
+	cpu.clearInterrupt()
+}
+
+// CLV - clear the overflow flag
+func (cpu *Cpu) CLV(instr instruction, addr uint16, value uint8) {
+	cpu.clearOverflow()
+}
+
+func (cpu *Cpu) cmpVals(x, y uint8) {
 	// Compute the result
-        compareResult := cpu.Y - value
+        compareResult := x - y
 
 	// Set the carry flag if Y >= value
-	if cpu.Y >= value {
+	if x >= y {
 		cpu.setCarry()
 	} else {
 		cpu.clearCarry()
 	}
 
 	// Set the zero flag if the result is zero
-	if cpu.Y == value {
+	if x == y {
 		cpu.setZero()
 	} else {
 		cpu.clearZero()
@@ -365,6 +445,116 @@ func (cpu *Cpu) CPY(instr instruction, addr uint16, value uint8) {
 	} else {
 		cpu.clearNegative()
 	}
+}
+
+// CMP - compares acc with value and sets flags
+func (cpu *Cpu) CMP(instr instruction, addr uint16, value uint8) {
+	cpu.cmpVals(cpu.A, value)
+}
+
+// CPX - compares x register with value and sets flags
+func (cpu *Cpu) CPX(instr instruction, addr uint16, value uint8) {
+        cpu.cmpVals(cpu.X, value)
+}
+
+// CPY - Compare Y Register
+// Performs a subtraction on Y register and src.
+// Sets flags accordingly. ZCN
+func (cpu *Cpu) CPY(instr instruction, addr uint16, value uint8) {
+	cpu.cmpVals(cpu.Y, value)
+}
+
+func (cpu *Cpu) setZHelper(value uint8) {
+	if value == 0 {
+		cpu.setZero()
+	} else {
+		cpu.clearZero()
+	}
+}
+
+func (cpu *Cpu) setNHelper(value uint8) {
+	if (value & 0x80) > 0 {
+		cpu.setNegative()
+	} else {
+		cpu.clearNegative()
+	}
+}
+
+// DEC - Decrement from memory
+func (cpu *Cpu) DEC(instr instruction, addr uint16, value uint8) {
+	result := value - 1
+        cpu.Memory[addr] = result
+	
+	cpu.setZHelper(result)
+	cpu.setNHelper(result)
+}
+
+// DEX - Decrement from X register
+func (cpu *Cpu) DEX(instr instruction, addr uint16, value uint8) {
+	result := value - 1
+        cpu.X = result
+	
+	cpu.setZHelper(result)
+	cpu.setNHelper(result)
+}
+
+// DEY - Decrement from Y register
+func (cpu *Cpu) DEY(instr instruction, addr uint16, value uint8) {
+	result := value - 1
+        cpu.Y = result
+	
+	cpu.setZHelper(result)
+	cpu.setNHelper(result)
+}
+
+// EOR - Exclusive OR with acc
+func (cpu *Cpu) EOR(instr instruction, addr uint16, value uint8) {
+	result := cpu.A ^ value
+        cpu.A = result
+	
+	cpu.setZHelper(result)
+	cpu.setNHelper(result)
+}
+
+// INC - Increment from memory
+func (cpu *Cpu) INC(instr instruction, addr uint16, value uint8) {
+	result := value + 1
+        cpu.Memory[addr] = result
+	
+	cpu.setZHelper(result)
+	cpu.setNHelper(result)
+}
+
+// INX - Increment from X register
+func (cpu *Cpu) INX(instr instruction, addr uint16, value uint8) {
+	result := value + 1
+        cpu.X = result
+	
+	cpu.setZHelper(result)
+	cpu.setNHelper(result)
+}
+
+// INY - Increment from X register
+func (cpu *Cpu) INY(instr instruction, addr uint16, value uint8) {
+	result := value + 1
+        cpu.Y = result
+	
+	cpu.setZHelper(result)
+	cpu.setNHelper(result)
+}
+
+// JMP - Increment from X register
+func (cpu *Cpu) JMP(instr instruction, addr uint16, value uint8) {
+        cpu.PC = addr
+}
+
+// JSR - Increment from X register
+func (cpu *Cpu) JSR(instr instruction, addr uint16, value uint8) {
+	result := value + 1
+        cpu.Y = result
+	
+	cpu.setZHelper(result)
+	cpu.setNHelper(result)
 }
 
 // SEI - Set Interrupt Disable

@@ -45,6 +45,12 @@ func (cpu *Cpu) Reset() {
 	log.Println("First opcode is ")
 	log.Printf("%+v\n", Instructions[firstInstructionOpcode])
 
+	// Set initial flags
+	cpu.P = 0x04
+
+	// initialize the stack pointer
+	cpu.SP = 0xFF
+
 	for true {
 		opcode := cpu.Read8(cpu.PC)
 		cpu.RunInstruction(Instructions[opcode])
