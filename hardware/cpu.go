@@ -49,6 +49,9 @@ func (cpu *Cpu) Reset() {
 	// Set initial flags
 	cpu.P = 0x04
 
+	// PPU register initial state
+	cpu.Memory[0x2002] = 0xA0
+
 	// initialize the stack pointer
 	cpu.SP = 0xFF
 

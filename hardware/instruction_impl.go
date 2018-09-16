@@ -88,7 +88,7 @@ func (cpu *Cpu) doRelativeBranch(value uint8) {
 }
 
 func (cpu *Cpu) RunInstruction(instr instruction) {
-	log.Printf("%+v %x PC:%x A: %x SP: %x X: %x Y: %x P: %x\n",
+	log.Printf("%+v \t %x \t PC:%x A: %x SP: %x X: %x Y: %x P: %x\n",
 		instr,
 		cpu.Memory[cpu.PC : cpu.PC + 1 + uint16(instr.bytes) - 1],
 		cpu.PC,
@@ -281,8 +281,6 @@ func (cpu *Cpu) RunInstruction(instr instruction) {
 // Performs addition with the accumulator and carry bit.
 // Sets flags accordingly ZCN
 func (cpu *Cpu) ADC(instr instruction, addr uint16, value uint8) {
-	log.Println("ADC")
-
 	// Calculate the result
 	result := cpu.A + value + getBit(cpu.P, 7)
 	
@@ -582,7 +580,7 @@ func (cpu *Cpu) DEC(instr instruction, addr uint16, value uint8) {
 
 // DEX - Decrement from X register
 func (cpu *Cpu) DEX(instr instruction, addr uint16, value uint8) {
-	result := value - 1
+	result := cpu.X - 1
         cpu.X = result
 	
 	cpu.setZHelper(result)
@@ -591,7 +589,7 @@ func (cpu *Cpu) DEX(instr instruction, addr uint16, value uint8) {
 
 // DEY - Decrement from Y register
 func (cpu *Cpu) DEY(instr instruction, addr uint16, value uint8) {
-	result := value - 1
+	result := cpu.Y - 1
         cpu.Y = result
 	
 	cpu.setZHelper(result)
@@ -618,7 +616,7 @@ func (cpu *Cpu) INC(instr instruction, addr uint16, value uint8) {
 
 // INX - Increment from X register
 func (cpu *Cpu) INX(instr instruction, addr uint16, value uint8) {
-	result := value + 1
+	result := cpu.X + 1
         cpu.X = result
 	
 	cpu.setZHelper(result)
@@ -627,7 +625,7 @@ func (cpu *Cpu) INX(instr instruction, addr uint16, value uint8) {
 
 // INY - Increment from Y register
 func (cpu *Cpu) INY(instr instruction, addr uint16, value uint8) {
-	result := value + 1
+	result := cpu.Y + 1
         cpu.Y = result
 	
 	cpu.setZHelper(result)

@@ -11,6 +11,8 @@ func (cpu *Cpu) Read8(addr uint16) uint8 {
 }
 
 func (cpu *Cpu) Read16(addr uint16) uint16 {
+
+	// TODO: @artenator this read totally messes up at the end of the address space. Fix it
 	
 	if addr < 0x2000 {
 		return binary.LittleEndian.Uint16(cpu.Memory[addr & 0x7FF : (uint32(addr) & 0x7FF) + 2])
@@ -44,13 +46,14 @@ func (cpu *Cpu) Push16(value uint16) {
 }
 
 func (cpu *Cpu) Push8(value uint8) {
-        cpu.Memory[cpu.SP] = value
+        cpu.Memory[0x100 | uint16(cpu.SP)] = value
+        cpu.SP--
 }
 
 func (cpu *Cpu) Pop16() uint16 {
 	cpu.SP++
 	
-	barr := []uint8{cpu.Memory[cpu.SP + 1], cpu.Memory[cpu.SP]}
+	barr := []uint8{cpu.Memory[(0x100 | uint16(cpu.SP)) + 1], cpu.Memory[0x100 | uint16(cpu.SP)]}
 
 	cpu.SP++
 
