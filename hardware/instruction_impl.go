@@ -88,11 +88,8 @@ func (cpu *Cpu) doRelativeBranch(value uint8) {
 }
 
 func (cpu *Cpu) RunInstruction(instr instruction) {
-	log.Printf("%+v\n", instr)
+	log.Printf("%+v %x PC:%x A: %x\n", instr, cpu.Memory[cpu.PC : cpu.PC + 1 + uint16(instr.bytes) - 1], cpu.PC, cpu.A)
 	
-	// Increment the PC
-	cpu.PC++
-
 	var addr uint16
 	var value uint8
 
@@ -101,60 +98,49 @@ func (cpu *Cpu) RunInstruction(instr instruction) {
 		addr = 0
 		value = cpu.A
 	case imm:
-		arg := cpu.Read8(cpu.PC)
+		arg := cpu.Read8(cpu.PC + 1)
 		addr = cpu.PC
                 value = arg
-		cpu.PC++
 	case zpg:
-		arg := cpu.Read8(cpu.PC)
+		arg := cpu.Read8(cpu.PC + 1)
 		addr = uint16(arg)
 		value = cpu.Read8(addr)
-		cpu.PC++
 	case zpgX:
-		arg := cpu.Read8(cpu.PC)
+		arg := cpu.Read8(cpu.PC + 1)
 		addr = uint16(arg + cpu.X) & 0xFF // wrap around for X
 		value = cpu.Read8(addr)
-		cpu.PC++
 	case zpgY:
-		arg := cpu.Read8(cpu.PC)
+		arg := cpu.Read8(cpu.PC + 1)
 		addr = uint16(arg + cpu.Y) & 0xFF // wrap around for Y
 		value = cpu.Read8(addr)
-		cpu.PC++
 	case abs:
-		arg := cpu.Read16(cpu.PC)
+		arg := cpu.Read16(cpu.PC + 1)
 		addr = arg
 		value = cpu.Read8(addr)
-		cpu.PC += 2
 	case absX:
-                arg := cpu.Read16(cpu.PC)
+                arg := cpu.Read16(cpu.PC + 1)
 		addr = arg + uint16(cpu.X)
 		value = cpu.Read8(addr)
-		cpu.PC += 2
 	case absY:
-		arg := cpu.Read16(cpu.PC)
+		arg := cpu.Read16(cpu.PC + 1)
 		addr = arg + uint16(cpu.Y)
 		value = cpu.Read8(addr)
-		cpu.PC += 2
 	case ind:
-		arg := cpu.Read16(cpu.PC)
+		arg := cpu.Read16(cpu.PC + 1)
 		addr = cpu.Read16(arg)
 		value = cpu.Read8(addr)
-		cpu.PC += 2
 	case indX:
-		arg := cpu.Read8(cpu.PC)
+		arg := cpu.Read8(cpu.PC + 1)
 		addr = cpu.Read16(uint16(arg + cpu.X) & 0xFF)
 		value = cpu.Read8(addr)
-		cpu.PC++
 	case indY:
-		arg := cpu.Read8(cpu.PC)
+		arg := cpu.Read8(cpu.PC + 1)
 		addr = cpu.Read16(uint16(arg)) + uint16(cpu.Y)
 		value = cpu.Read8(addr)
-		cpu.PC++
 	case rel:
-		arg := cpu.Read8(cpu.PC)
+		arg := cpu.Read8(cpu.PC + 1)
 		addr = 0
 		value = arg
-		cpu.PC++
 	case impl:
 		addr = 0
                 value = 0
@@ -162,11 +148,12 @@ func (cpu *Cpu) RunInstruction(instr instruction) {
 		log.Fatal(errors.New("Fatal: " + string(instr.mode) + " is not a valid addressing mode."))
 	}
 
+	// increment the pc based on instruction size
+	cpu.PC += uint16(instr.bytes)
+
 	switch instr.assemblyCode {
 	case "ADC":
 		cpu.ADC(instr, addr, value)
-	case "CPY":
-		cpu.CPY(instr, addr, value)
 	case "AND":
 		cpu.AND(instr, addr, value)
 	case "ASL":
@@ -179,8 +166,104 @@ func (cpu *Cpu) RunInstruction(instr instruction) {
 		cpu.BEQ(instr, addr, value)
 	case "BIT":
 		cpu.BIT(instr, addr, value)
+	case "BMI":
+		cpu.BMI(instr, addr, value)
+	case "BNE":
+		cpu.BNE(instr, addr, value)
+	case "BPL":
+		cpu.BPL(instr, addr, value)
+	case "BRK":
+		cpu.BRK(instr, addr, value)
+	case "BVC":
+		cpu.BVC(instr, addr, value)
+	case "BVS":
+		cpu.BVS(instr, addr, value)
+	case "CLC":
+		cpu.CLC(instr, addr, value)
+	case "CLD":
+		cpu.CLD(instr, addr, value)
+	case "CLI":
+		cpu.CLI(instr, addr, value)
+	case "CLV":
+		cpu.CLV(instr, addr, value)
+	case "CMP":
+		cpu.CMP(instr, addr, value)
+	case "CPX":
+		cpu.CPX(instr, addr, value)
+	case "CPY":
+		cpu.CPY(instr, addr, value)
+	case "DEC":
+		cpu.DEC(instr, addr, value)
+	case "DEX":
+		cpu.DEX(instr, addr, value)
+	case "DEY":
+		cpu.DEY(instr, addr, value)
+	case "EOR":
+		cpu.EOR(instr, addr, value)
+	case "INC":
+		cpu.INC(instr, addr, value)
+	case "INX":
+		cpu.INX(instr, addr, value)
+	case "INY":
+		cpu.INY(instr, addr, value)
+	case "JMP":
+		cpu.JMP(instr, addr, value)
+	case "JSR":
+		cpu.JSR(instr, addr, value)
+	case "LDA":
+		cpu.LDA(instr, addr, value)
+	case "LDX":
+		cpu.LDX(instr, addr, value)
+	case "LDY":
+		cpu.LDY(instr, addr, value)
+	case "LSR":
+		cpu.LSR(instr, addr, value)
+	case "NOP":
+		cpu.NOP(instr, addr, value)
+	case "ORA":
+		cpu.ORA(instr, addr, value)
+	case "PHA":
+		cpu.PHA(instr, addr, value)
+	case "PHP":
+		cpu.PHP(instr, addr, value)
+	case "PLA":
+		cpu.PLA(instr, addr, value)
+	case "PLP":
+		cpu.PLP(instr, addr, value)
+	case "ROL":
+		cpu.ROL(instr, addr, value)
+	case "ROR":
+		cpu.ROR(instr, addr, value)
+	case "RTI":
+		cpu.RTI(instr, addr, value)
+	case "RTS":
+		cpu.RTS(instr, addr, value)
+	case "SBC":
+		cpu.SBC(instr, addr, value)
+	case "SEC":
+		cpu.SEC(instr, addr, value)
+	case "SED":
+		cpu.SED(instr, addr, value)
 	case "SEI":
 		cpu.SEI(instr, addr, value)
+	case "STA":
+		cpu.STA(instr, addr, value)
+	case "STX":
+		cpu.STX(instr, addr, value)
+	case "STY":
+		cpu.STY(instr, addr, value)
+	case "TAX":
+		cpu.TAX(instr, addr, value)
+	case "TAY":
+		cpu.TAY(instr, addr, value)
+	case "TSX":
+		cpu.TSX(instr, addr, value)
+	case "TXA":
+		cpu.TXA(instr, addr, value)
+	case "TXS":
+		cpu.TXS(instr, addr, value)
+	case "TYA":
+		cpu.TYA(instr, addr, value)
 	default:
                 log.Fatal(errors.New("Fatal: " + string(instr.assemblyCode) + " is not a valid instruction code."))
 	}
@@ -265,7 +348,7 @@ func (cpu *Cpu) ASL(instr instruction, addr uint16, value uint8) {
 		cpu.A = result
 	} else {
 		result = value << 1
-		cpu.Memory[addr] = result
+		cpu.Write8(addr, result)
 	}
 
 	newBit7 = getBit(result, 7)
@@ -278,7 +361,7 @@ func (cpu *Cpu) ASL(instr instruction, addr uint16, value uint8) {
 	}
 
 	// Set the zero flag if the result is zero
-	if cpu.A == 0 {
+	if result == 0 {
 		cpu.setZero()
 	} else {
 		cpu.clearZero()
@@ -483,7 +566,7 @@ func (cpu *Cpu) setNHelper(value uint8) {
 // DEC - Decrement from memory
 func (cpu *Cpu) DEC(instr instruction, addr uint16, value uint8) {
 	result := value - 1
-        cpu.Memory[addr] = result
+        cpu.Write8(addr, result)
 	
 	cpu.setZHelper(result)
 	cpu.setNHelper(result)
@@ -519,7 +602,7 @@ func (cpu *Cpu) EOR(instr instruction, addr uint16, value uint8) {
 // INC - Increment from memory
 func (cpu *Cpu) INC(instr instruction, addr uint16, value uint8) {
 	result := value + 1
-        cpu.Memory[addr] = result
+        cpu.Write8(addr, value)
 	
 	cpu.setZHelper(result)
 	cpu.setNHelper(result)
@@ -534,7 +617,7 @@ func (cpu *Cpu) INX(instr instruction, addr uint16, value uint8) {
 	cpu.setNHelper(result)
 }
 
-// INY - Increment from X register
+// INY - Increment from Y register
 func (cpu *Cpu) INY(instr instruction, addr uint16, value uint8) {
 	result := value + 1
         cpu.Y = result
@@ -543,24 +626,217 @@ func (cpu *Cpu) INY(instr instruction, addr uint16, value uint8) {
 	cpu.setNHelper(result)
 }
 
-// JMP - Increment from X register
+// JMP - jump to address
 func (cpu *Cpu) JMP(instr instruction, addr uint16, value uint8) {
         cpu.PC = addr
 }
 
-// JSR - Increment from X register
+// JSR - jump to subroutine
 func (cpu *Cpu) JSR(instr instruction, addr uint16, value uint8) {
-	result := value + 1
-        cpu.Y = result
+        cpu.Push16(cpu.PC - 1)
+
+	cpu.PC = addr
+}
+
+// LDA - load acc with mem location
+func (cpu *Cpu) LDA(instr instruction, addr uint16, value uint8) {
+        cpu.A = value
+
+	cpu.setZHelper(value)
+	cpu.setNHelper(value)
+}
+
+// LDX - load X register with mem location
+func (cpu *Cpu) LDX(instr instruction, addr uint16, value uint8) {
+        cpu.X = value
+
+	cpu.setZHelper(value)
+	cpu.setNHelper(value)
+}
+
+// LDY - load Y register with mem location
+func (cpu *Cpu) LDY(instr instruction, addr uint16, value uint8) {
+        cpu.Y = value
+
+	cpu.setZHelper(value)
+	cpu.setNHelper(value)
+}
+
+// LSR - Logical Shift Right
+func (cpu *Cpu) LSR(instr instruction, addr uint16, value uint8) {
+        var result uint8
+	oldBit0 := getBit(value, 0)
+
+	// If acc mode, shift the acc
+	if instr.mode == A {
+                result = cpu.A >> 1
+		cpu.A = result
+	} else {
+		result = value >> 1
+		cpu.Write8(addr, result)
+	}
 	
+	// Set the carry flag old bit 7 is 1
+	cpu.setCHelper(oldBit0)
 	cpu.setZHelper(result)
 	cpu.setNHelper(result)
+}
+
+// NOP - No operation!
+func (cpu *Cpu) NOP(instr instruction, addr uint16, value uint8) {
+	
+}
+
+// ORA - Logical Inclusive Or
+func (cpu *Cpu) ORA(instr instruction, addr uint16, value uint8) {
+	result := cpu.A | value
+	cpu.A = result
+
+	cpu.setZHelper(result)
+	cpu.setNHelper(result)
+}
+
+// PHA - Push Accumulator
+func (cpu *Cpu) PHA(instr instruction, addr uint16, value uint8) {
+	cpu.Push8(cpu.A)
+}
+
+// PHP - Push Processor Status
+func (cpu *Cpu) PHP(instr instruction, addr uint16, value uint8) {
+	cpu.Push8(cpu.P)
+}
+
+// PLA - Pull Accumulator
+func (cpu *Cpu) PLA(instr instruction, addr uint16, value uint8) {
+	cpu.A = cpu.Pop8()
+}
+
+// PLP - Pull Processor Status
+func (cpu *Cpu) PLP(instr instruction, addr uint16, value uint8) {
+	cpu.P = cpu.Pop8()
+}
+
+func (cpu *Cpu) setCHelper(x uint8) {
+	if x > 0 {
+		cpu.setCarry()
+	} else {
+		cpu.clearCarry()
+	}
+}
+
+// ROL - rotate left
+func (cpu *Cpu) ROL(instr instruction, addr uint16, value uint8) {
+        oldBit7 := getBit(value, 7)
+	var result uint8
+	
+	result = (cpu.A << 1) | getBit(cpu.P, 0)
+	cpu.setCHelper(oldBit7)
+	cpu.setNHelper(result)
+	cpu.setZHelper(result)
+
+        if instr.mode == A {
+		cpu.A = result
+	} else {
+		cpu.Write8(addr, result)
+	}
+}
+
+// ROR - rotate right
+func (cpu *Cpu) ROR(instr instruction, addr uint16, value uint8) {
+        oldBit0 := getBit(value, 0)
+	var result uint8
+	
+	result = (cpu.A >> 1) | (getBit(cpu.P, 7) << 7)
+	cpu.setCHelper(oldBit0)
+	cpu.setNHelper(result)
+	cpu.setZHelper(result)
+
+        if instr.mode == A {
+		cpu.A = result
+	} else {
+		cpu.Write8(addr, result)
+	}
+}
+
+// RTI - return from interrupt
+func (cpu *Cpu) RTI(instr instruction, addr uint16, value uint8) {
+	processorStatus := cpu.Pop8()
+	returnAddress := cpu.Pop16()
+	
+	cpu.P = processorStatus
+	cpu.PC = returnAddress
+}
+
+// RTS - return from subroutine
+func (cpu *Cpu) RTS(instr instruction, addr uint16, value uint8) {
+	returnAddress := cpu.Pop16() + 1
+	
+	cpu.PC = returnAddress
+}
+
+// SBC - Subtract with Carry
+func (cpu *Cpu) SBC(instr instruction, addr uint16, value uint8) {
+	// TODO: understand why this can be implemented like this
+        cpu.ADC(instr, addr, ^value)
+}
+
+// SEC - Set Carry Flag
+func (cpu *Cpu) SEC(instr instruction, addr uint16, value uint8) {
+        cpu.setCarry()
+}
+
+// SED - Set Decimal Flag
+func (cpu *Cpu) SED(instr instruction, addr uint16, value uint8) {
+        cpu.setDecimal()
 }
 
 // SEI - Set Interrupt Disable
 // Sets the interrupt disable flag to one
 func (cpu *Cpu) SEI(instr instruction, addr uint16, value uint8) {
-	log.Println("SEI")
-	
 	cpu.setInterrupt()
+}
+
+// STA - store acc in memory
+func (cpu *Cpu) STA(instr instruction, addr uint16, value uint8) {
+        cpu.Write8(addr, cpu.A)
+}
+
+// STX - store X in memory
+func (cpu *Cpu) STX(instr instruction, addr uint16, value uint8) {
+        cpu.Write8(addr, cpu.X)
+}
+
+// STY - store acc in memory
+func (cpu *Cpu) STY(instr instruction, addr uint16, value uint8) {
+        cpu.Write8(addr, cpu.Y)
+}
+
+// TAX - transfer acc to X
+func (cpu *Cpu) TAX(instr instruction, addr uint16, value uint8) {
+        cpu.X = cpu.A
+}
+
+// TAY - transfer acc to Y
+func (cpu *Cpu) TAY(instr instruction, addr uint16, value uint8) {
+        cpu.Y = cpu.A
+}
+
+// TSX - transfer sp to X
+func (cpu *Cpu) TSX(instr instruction, addr uint16, value uint8) {
+        cpu.X = cpu.SP
+}
+
+// TXA - transfer x to acc
+func (cpu *Cpu) TXA(instr instruction, addr uint16, value uint8) {
+        cpu.A = cpu.X
+}
+
+// TXS - transfer x to sp
+func (cpu *Cpu) TXS(instr instruction, addr uint16, value uint8) {
+        cpu.SP = cpu.X
+}
+
+// TYA - transfer y to acc
+func (cpu *Cpu) TYA(instr instruction, addr uint16, value uint8) {
+        cpu.A = cpu.Y
 }

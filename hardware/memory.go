@@ -11,18 +11,35 @@ func (cpu *Cpu) Read8(addr uint16) uint8 {
 }
 
 func (cpu *Cpu) Read16(addr uint16) uint16 {
+	
 	if addr < 0x2000 {
-		return binary.LittleEndian.Uint16(cpu.Memory[addr ^ 0x7FF : (addr ^ 0x7FF) + 2])
+		return binary.LittleEndian.Uint16(cpu.Memory[addr & 0x7FF : (uint32(addr) & 0x7FF) + 2])
 	} else {
-		return binary.LittleEndian.Uint16(cpu.Memory[addr : addr + 2])
+		return binary.LittleEndian.Uint16(cpu.Memory[addr : uint32(addr) + 2])
+	}
+}
+
+func (cpu *Cpu) Write8(addr uint16, value uint8) {
+	if addr < 0x2000 {
+                cpu.Memory[addr & 0x7FF] = value
+	} else {
+                cpu.Memory[addr] = value
+	}
+}
+
+func (cpu *Cpu) Write16(addr, value uint16) {
+	if addr < 0x2000 {
+		binary.LittleEndian.PutUint16(cpu.Memory[addr & 0x7FF : (addr & 0x7FF) + 2], value)
+	} else {
+		binary.LittleEndian.PutUint16(cpu.Memory[addr : addr + 2], value)
 	}
 }
 
 func (cpu *Cpu) Push16(value uint16) {
-	hi, lo := uint8(value >> 8), uint8(value & 0xFF)
+	high, low := uint8(value >> 8), uint8(value & 0xFF)
 	
-	cpu.Memory[cpu.SP] = hi
-	cpu.Memory[cpu.SP - 1] = lo
+	cpu.Memory[0x100 | uint16(cpu.SP)] = high
+	cpu.Memory[(0x100 | uint16(cpu.SP)) - 1] = low
         cpu.SP -= 2
 }
 

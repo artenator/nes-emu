@@ -81,7 +81,7 @@ func CreateCartridge(filename string) (Cartridge, error) {
 func (cpu *Cpu) LoadCartridge(cartridge Cartridge) {
 	// if there's only one 16KB prg slot, mirror it in the cpu memory
 	if uint(cartridge.prgRomBlocks) == 1 {
-		copy(cpu.Memory[0x8000:0xC000], cartridge.prgRom[0:0x4000])
-		copy(cpu.Memory[0xC000:0xFFFF], cartridge.prgRom[0:0x4000])
+		copy(cpu.Memory[0x8000:0xC000 + 1], cartridge.prgRom[0:0x4000 + 1])
+		copy(cpu.Memory[0xC000:0xFFFF + 1], cartridge.prgRom[0:0x4000 + 1])
 	}
 }
