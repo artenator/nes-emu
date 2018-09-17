@@ -1,22 +1,26 @@
 package main
 
-import ("log"
-	"nes-emu/hardware")
+import (
+	"log"
+	"nes-emu/hardware"
+)
 
 func main() {
 	log.Println("Arte's NES Emu")
-	// create cpu
-	cpu := hardware.Cpu{}
+
+	// create new nes
+	//cpu := hardware.Cpu{}
+	nes := hardware.NewNES()
 
 	cart, err := hardware.CreateCartridge("donkey-kong.nes")
 
 	if err != nil {
 		log.Println(err)
 	} else {
-		cpu.LoadCartridge(cart)
+		nes.CPU.LoadCartridge(cart)
 		//log.Println(cart)
 		//log.Println(cpu.Memory)
-		cpu.Reset()
+		nes.CPU.Reset()
 	}
 	
 	// log.Printf("%x", rom)

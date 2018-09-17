@@ -735,7 +735,7 @@ func (cpu *Cpu) ROL(instr instruction, addr uint16, value uint8) {
         oldBit7 := getBit(value, 7)
 	var result uint8
 	
-	result = (cpu.A << 1) | getBit(cpu.P, 0)
+	result = (value << 1) | getBit(cpu.P, 0)
 	cpu.setCHelper(oldBit7)
 	cpu.setNHelper(result)
 	cpu.setZHelper(result)
@@ -749,10 +749,10 @@ func (cpu *Cpu) ROL(instr instruction, addr uint16, value uint8) {
 
 // ROR - rotate right
 func (cpu *Cpu) ROR(instr instruction, addr uint16, value uint8) {
-        oldBit0 := getBit(value, 0)
+	oldBit0 := getBit(value, 0)
 	var result uint8
 	
-	result = (cpu.A >> 1) | (getBit(cpu.P, 7) << 7)
+	result = (value >> 1) | (getBit(cpu.P, 7) << 7)
 	cpu.setCHelper(oldBit0)
 	cpu.setNHelper(result)
 	cpu.setZHelper(result)
