@@ -1,10 +1,15 @@
 package hardware
 
-import "encoding/binary"
+import (
+	"encoding/binary"
+	"log"
+)
 
 func (cpu *Cpu) Read8(addr uint16) uint8 {
 	if addr < 0x2000 {
 		return cpu.Memory[addr & 0x7FF]
+	} else if addr >= 0x2000 && addr < 0x4000 {
+		return cpu.Memory[addr & 0x2007]
 	} else {
 		return cpu.Memory[addr]
 	}
@@ -16,22 +21,33 @@ func (cpu *Cpu) Read16(addr uint16) uint16 {
 	
 	if addr < 0x2000 {
 		return binary.LittleEndian.Uint16(cpu.Memory[addr & 0x7FF : (uint32(addr) & 0x7FF) + 2])
+	} else if addr >= 0x2000 && addr < 0x4000 {
+		return binary.LittleEndian.Uint16(cpu.Memory[addr & 0x2007 : (uint32(addr) & 0x2007) + 2])
 	} else {
 		return binary.LittleEndian.Uint16(cpu.Memory[addr : uint32(addr) + 2])
 	}
 }
 
 func (cpu *Cpu) Write8(addr uint16, value uint8) {
+
+	if addr >= 0x2000 && addr < 0x4000 {
+		log.Printf("wrote %x to ppu regs at addr: %x", value, addr)
+	}
+
 	if addr < 0x2000 {
-                cpu.Memory[addr & 0x7FF] = value
+		cpu.Memory[addr & 0x7FF] = value
+	} else if addr >= 0x2000 && addr < 0x4000 {
+		cpu.Memory[addr & 0x2007] = value
 	} else {
-                cpu.Memory[addr] = value
+		cpu.Memory[addr] = value
 	}
 }
 
 func (cpu *Cpu) Write16(addr, value uint16) {
 	if addr < 0x2000 {
 		binary.LittleEndian.PutUint16(cpu.Memory[addr & 0x7FF : (addr & 0x7FF) + 2], value)
+	} else if addr >= 0x2000 && addr < 0x4000 {
+		binary.LittleEndian.PutUint16(cpu.Memory[addr & 0x2007 : (addr & 0x2007) + 2], value)
 	} else {
 		binary.LittleEndian.PutUint16(cpu.Memory[addr : addr + 2], value)
 	}

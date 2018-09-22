@@ -2,6 +2,7 @@ package hardware
 
 import (
 	"log"
+	"time"
 )
 
 // cpu speed
@@ -58,7 +59,7 @@ func (cpu *Cpu) Reset() {
 		opcode := cpu.Read8(cpu.PC)
 		cpu.RunInstruction(Instructions[opcode])
 
-		//time.Sleep(500 * time.Millisecond)
+		time.Sleep(500 * time.Nanosecond)
 	}
 
 	// print the whole CPU and memory!!
