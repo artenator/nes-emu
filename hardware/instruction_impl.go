@@ -88,7 +88,7 @@ func (cpu *Cpu) doRelativeBranch(value uint8) {
 }
 
 func (cpu *Cpu) RunInstruction(instr instruction) {
-	log.Printf("%+v %x PC:%x A: %x SP: %x X: %x Y: %x P: %x PPUDATA: %x",
+	log.Printf("%+v %x PC:%x A: %x SP: %x X: %x Y: %x P: %x PPUADDR: %x PPUDATA: %x",
 		instr,
 		cpu.Memory[cpu.PC : cpu.PC + 1 + uint16(instr.bytes) - 1],
 		cpu.PC,
@@ -97,6 +97,7 @@ func (cpu *Cpu) RunInstruction(instr instruction) {
 		cpu.X,
 		cpu.Y,
 		cpu.P,
+		cpu.Memory[0x2006],
 		cpu.Memory[0x2007],)
 	
 	var addr uint16
@@ -805,7 +806,19 @@ func (cpu *Cpu) SEI(instr instruction, addr uint16, value uint8) {
 
 // STA - store acc in memory
 func (cpu *Cpu) STA(instr instruction, addr uint16, value uint8) {
-        cpu.Write8(addr, cpu.A)
+	cpu.Write8(addr, cpu.A)
+
+	if addr >= 0x2000 && addr < 0x4000 {
+		truncAddr := addr & 0x2007
+
+		if truncAddr == 0x2006 {
+			cpu.nes.PPU.setPpuAddr(cpu.A)
+		}
+
+		if truncAddr == 0x2007 {
+			cpu.nes.PPU.Write8(cpu.A)
+		}
+	}
 }
 
 // STX - store X in memory

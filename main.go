@@ -17,7 +17,7 @@ func main() {
 	if err != nil {
 		log.Println(err)
 	} else {
-		nes.CPU.LoadCartridge(cart)
+		nes.LoadCartridge(cart)
 		//log.Println(cart)
 		//log.Println(cpu.Memory)
 		nes.CPU.Reset()

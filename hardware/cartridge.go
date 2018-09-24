@@ -78,10 +78,12 @@ func CreateCartridge(filename string) (Cartridge, error) {
 	return c, nil
 }
 
-func (cpu *Cpu) LoadCartridge(cartridge Cartridge) {
+func (nes *NES) LoadCartridge(cartridge Cartridge) {
 	// if there's only one 16KB prg slot, mirror it in the cpu memory
 	if uint(cartridge.prgRomBlocks) == 1 {
-		copy(cpu.Memory[0x8000:0xC000], cartridge.prgRom[0:0x4000])
-		copy(cpu.Memory[0xC000:0x10000], cartridge.prgRom[0:0x4000])
+		copy(nes.CPU.Memory[0x8000:0xC000], cartridge.prgRom[0:0x4000])
+		copy(nes.CPU.Memory[0xC000:0x10000], cartridge.prgRom[0:0x4000])
+
+		copy(nes.PPU.Memory[0:0x2000], cartridge.chrRom[0:0x2000])
 	}
 }

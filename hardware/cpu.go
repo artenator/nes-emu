@@ -9,6 +9,9 @@ import (
 const cpuSpeed = 1789773
 
 type Cpu struct {
+	// pointer to base struct
+	nes *NES
+
 	// Program Counter
 	PC uint16
 
@@ -50,6 +53,7 @@ func (cpu *Cpu) Reset() {
 	cpu.P = 0x04
 
 	// PPU register initial state
+	cpu.Memory[0x2000] = 0x80
 	cpu.Memory[0x2002] = 0xA0
 
 	// initialize the stack pointer
