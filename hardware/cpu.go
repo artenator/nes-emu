@@ -41,6 +41,9 @@ func (cpu *Cpu) Reset() {
 	firstInstruction := cpu.Read16(0xFFFC)
 	// Set the PC to be at the address
 	cpu.PC = firstInstruction
+
+	// number of instructions ran
+	var numOfInstructions uint = 0
 	
 	firstInstructionOpcode := cpu.Read8(firstInstruction)
 	
@@ -64,8 +67,29 @@ func (cpu *Cpu) Reset() {
 		cpu.RunInstruction(Instructions[opcode])
 
 		time.Sleep(500 * time.Nanosecond)
+
+		numOfInstructions++
+
+		if numOfInstructions % 100 == 0 {
+			if (cpu.Memory[0x2002] >> 7) & 1 == 0 {
+				cpu.nes.PPU.setVBlank()
+			} else {
+				cpu.nes.PPU.clearVBlank()
+			}
+		}
 	}
 
 	// print the whole CPU and memory!!
 	log.Printf("%+v\n", cpu)
+}
+
+func (cpu *Cpu) handleNMI() {
+	// Push current pc to the stack
+	cpu.Push16(cpu.PC)
+
+	// push current processor status to the stack
+	cpu.Push8(cpu.P)
+
+	// Set the PC to the NMI vector at 0xFFFA
+	cpu.PC = cpu.Read16(0xFFFA)
 }

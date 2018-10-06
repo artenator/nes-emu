@@ -18,16 +18,19 @@ func (ppu *Ppu) Write8(value uint8){
 	ppuAddressArr := []uint8{ppu.ppuAddrMSB, ppu.ppuAddrLSB}
 	ppuWriteAddress := binary.BigEndian.Uint16(ppuAddressArr)
 
-	if value == 0x24 {
-		log.Println("Hello")
-	}
+	log.Printf("Write to ppu ram at address %x, base: %x, offset: %x, value: %x", ppuWriteAddress + ppu.ppuAddrOffset, ppuWriteAddress, ppu.ppuAddrOffset, value)
 
-	if ppu.nes.CPU.Memory[0x2002] != 0xA0 {
+	if ppuWriteAddress == 0x3f11 {
 		log.Println("Hello")
 	}
 
 	ppu.Memory[ppuWriteAddress + ppu.ppuAddrOffset] = value
-	ppu.ppuAddrOffset++
+
+	if (ppu.nes.CPU.Memory[0x2000] >> 2) & 1 == 1 {
+		ppu.ppuAddrOffset += 0x20
+	} else {
+		ppu.ppuAddrOffset++
+	}
 }
 
 func (ppu *Ppu) setPpuAddr(addr uint8) {
@@ -39,4 +42,17 @@ func (ppu *Ppu) setPpuAddr(addr uint8) {
 	}
 
 	ppu.ppuAddrCounter++
+}
+
+func (ppu *Ppu) setVBlank() {
+	ppu.nes.CPU.Memory[0x2002] |= 1 << 7
+
+	if (ppu.nes.CPU.Memory[0x2000] >> 7) & 1 == 1 {
+		log.Println("NMI Interrupt")
+		ppu.nes.CPU.handleNMI()
+	}
+}
+
+func (ppu *Ppu) clearVBlank() {
+	ppu.nes.CPU.Memory[0x2002] &= 0 << 7
 }

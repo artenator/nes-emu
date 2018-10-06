@@ -110,7 +110,7 @@ func (cpu *Cpu) RunInstruction(instr instruction) {
 	case imm:
 		arg := cpu.Read8(cpu.PC + 1)
 		addr = cpu.PC
-                value = arg
+		value = arg
 	case zpg:
 		arg := cpu.Read8(cpu.PC + 1)
 		addr = uint16(arg)
@@ -153,7 +153,7 @@ func (cpu *Cpu) RunInstruction(instr instruction) {
 		value = arg
 	case impl:
 		addr = 0
-                value = 0
+		value = 0
 	default:
 		log.Fatal(errors.New("Fatal: " + string(instr.mode) + " is not a valid addressing mode."))
 	}
@@ -648,7 +648,7 @@ func (cpu *Cpu) JSR(instr instruction, addr uint16, value uint8) {
 
 // LDA - load acc with mem location
 func (cpu *Cpu) LDA(instr instruction, addr uint16, value uint8) {
-        cpu.A = value
+	cpu.A = value
 
 	cpu.setZHelper(value)
 	cpu.setNHelper(value)
@@ -834,11 +834,15 @@ func (cpu *Cpu) STY(instr instruction, addr uint16, value uint8) {
 // TAX - transfer acc to X
 func (cpu *Cpu) TAX(instr instruction, addr uint16, value uint8) {
         cpu.X = cpu.A
+        cpu.setZHelper(cpu.X)
+        cpu.setNHelper(cpu.X)
 }
 
 // TAY - transfer acc to Y
 func (cpu *Cpu) TAY(instr instruction, addr uint16, value uint8) {
         cpu.Y = cpu.A
+		cpu.setZHelper(cpu.Y)
+		cpu.setNHelper(cpu.Y)
 }
 
 // TSX - transfer sp to X
