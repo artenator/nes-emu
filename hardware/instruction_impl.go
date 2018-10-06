@@ -88,7 +88,8 @@ func (cpu *Cpu) doRelativeBranch(value uint8) {
 }
 
 func (cpu *Cpu) RunInstruction(instr instruction) {
-	log.Printf("%+v %x PC:%x A: %x SP: %x X: %x Y: %x P: %x PPUADDR: %x PPUDATA: %x",
+	log.Printf("%x %+v %x PC:%x A: %x SP: %x X: %x Y: %x P: %x PPUADDR: %x PPUDATA: %x",
+		cpu.PC,
 		instr,
 		cpu.Memory[cpu.PC : cpu.PC + 1 + uint16(instr.bytes) - 1],
 		cpu.PC,
@@ -202,6 +203,8 @@ func (cpu *Cpu) RunInstruction(instr instruction) {
 		cpu.CPX(instr, addr, value)
 	case "CPY":
 		cpu.CPY(instr, addr, value)
+	case "DCP":
+		cpu.DCP(instr, addr, value)
 	case "DEC":
 		cpu.DEC(instr, addr, value)
 	case "DEX":
@@ -220,6 +223,8 @@ func (cpu *Cpu) RunInstruction(instr instruction) {
 		cpu.JMP(instr, addr, value)
 	case "JSR":
 		cpu.JSR(instr, addr, value)
+	case "LAX":
+		cpu.LAX(instr, addr, value)
 	case "LDA":
 		cpu.LDA(instr, addr, value)
 	case "LDX":
@@ -458,7 +463,7 @@ func (cpu *Cpu) BNE(instr instruction, addr uint16, value uint8) {
 // If the negative flag is clear, then do a relative branch
 func (cpu *Cpu) BPL(instr instruction, addr uint16, value uint8) {
 	// check if negative flag is set
-	if getBit(cpu.P, 7) > 0 {
+	if getBit(cpu.P, 7) == 0 {
 		cpu.doRelativeBranch(value)
 	}
 }
@@ -513,6 +518,9 @@ func (cpu *Cpu) CLV(instr instruction, addr uint16, value uint8) {
 }
 
 func (cpu *Cpu) cmpVals(x, y uint8) {
+	if cpu.PC == 0xc7ed {
+		log.Println("hello")
+	}
 	// Compute the result
         compareResult := x - y
 
@@ -569,6 +577,15 @@ func (cpu *Cpu) setNHelper(value uint8) {
 	} else {
 		cpu.clearNegative()
 	}
+}
+
+// DCP - Decrement from memory with C
+func (cpu *Cpu) DCP(instr instruction, addr uint16, value uint8) {
+	result := value - 1
+	oldBit0 := getBit(value, 0)
+	cpu.Write8(addr, result)
+
+	cpu.setCHelper(oldBit0)
 }
 
 // DEC - Decrement from memory
@@ -646,6 +663,15 @@ func (cpu *Cpu) JSR(instr instruction, addr uint16, value uint8) {
 	cpu.PC = addr
 }
 
+// LAX - load acc and Y with mem location
+func (cpu *Cpu) LAX(instr instruction, addr uint16, value uint8) {
+	cpu.A = value
+	cpu.X = value
+
+	cpu.setZHelper(value)
+	cpu.setNHelper(value)
+}
+
 // LDA - load acc with mem location
 func (cpu *Cpu) LDA(instr instruction, addr uint16, value uint8) {
 	cpu.A = value
@@ -672,12 +698,12 @@ func (cpu *Cpu) LDY(instr instruction, addr uint16, value uint8) {
 
 // LSR - Logical Shift Right
 func (cpu *Cpu) LSR(instr instruction, addr uint16, value uint8) {
-        var result uint8
+	var result uint8
 	oldBit0 := getBit(value, 0)
 
 	// If acc mode, shift the acc
 	if instr.mode == A {
-                result = cpu.A >> 1
+		result = cpu.A >> 1
 		cpu.A = result
 	} else {
 		result = value >> 1
@@ -711,17 +737,26 @@ func (cpu *Cpu) PHA(instr instruction, addr uint16, value uint8) {
 
 // PHP - Push Processor Status
 func (cpu *Cpu) PHP(instr instruction, addr uint16, value uint8) {
-	cpu.Push8(cpu.P)
+	// PHP always sets bit 4
+	cpu.Push8(cpu.P | 0x30)
 }
 
 // PLA - Pull Accumulator
 func (cpu *Cpu) PLA(instr instruction, addr uint16, value uint8) {
-	cpu.A = cpu.Pop8()
+	if cpu.PC == 0xc7e9 {
+		log.Println("Hello")
+	}
+	poppedValue := cpu.Pop8()
+	cpu.A = poppedValue
+
+	cpu.setZHelper(poppedValue)
+	cpu.setNHelper(poppedValue)
 }
 
 // PLP - Pull Processor Status
 func (cpu *Cpu) PLP(instr instruction, addr uint16, value uint8) {
-	cpu.P = cpu.Pop8()
+	// bit 4 and 5 are don't cares, but bit 5 is always set
+	cpu.P = (cpu.Pop8() & 0xEF) | 0x20
 }
 
 func (cpu *Cpu) setCHelper(x uint8) {

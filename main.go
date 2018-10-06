@@ -12,7 +12,7 @@ func main() {
 	//cpu := hardware.Cpu{}
 	nes := hardware.NewNES()
 
-	cart, err := hardware.CreateCartridge("donkey-kong.nes")
+	cart, err := hardware.CreateCartridge("nestest.nes")
 
 	if err != nil {
 		log.Println(err)

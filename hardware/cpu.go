@@ -38,7 +38,8 @@ type Cpu struct {
 
 func (cpu *Cpu) Reset() {
 	// Read first instruction address location
-	firstInstruction := cpu.Read16(0xFFFC)
+	//firstInstruction := cpu.Read16(0xFFFC)
+	firstInstruction := uint16(0xC000)
 	// Set the PC to be at the address
 	cpu.PC = firstInstruction
 
@@ -53,7 +54,7 @@ func (cpu *Cpu) Reset() {
 	log.Printf("%+v\n", Instructions[firstInstructionOpcode])
 
 	// Set initial flags
-	cpu.P = 0x04
+	cpu.P = 0x24
 
 	// PPU register initial state
 	cpu.Memory[0x2000] = 0x80

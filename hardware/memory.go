@@ -79,7 +79,7 @@ func (cpu *Cpu) Pop16() uint16 {
 func (cpu *Cpu) Pop8() uint8 {
 	cpu.SP++
 
-	b := cpu.Memory[cpu.SP]
+	b := cpu.Memory[0x100 | uint16(cpu.SP)]
 
 	return uint8(b)
 }
