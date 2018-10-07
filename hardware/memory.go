@@ -2,7 +2,6 @@ package hardware
 
 import (
 	"encoding/binary"
-	"log"
 )
 
 func (cpu *Cpu) Read8(addr uint16) uint8 {
@@ -31,7 +30,7 @@ func (cpu *Cpu) Read16(addr uint16) uint16 {
 func (cpu *Cpu) Write8(addr uint16, value uint8) {
 
 	if addr == 0x2000 {
-		log.Printf("wrote %x to ppu regs at addr: %x", value, addr)
+		//log.Printf("wrote %x to ppu regs at addr: %x", value, addr)
 	}
 
 	if addr < 0x2000 {

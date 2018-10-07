@@ -2,7 +2,6 @@ package hardware
 
 import (
 	"encoding/binary"
-	"log"
 )
 
 type Ppu struct {
@@ -18,11 +17,7 @@ func (ppu *Ppu) Write8(value uint8){
 	ppuAddressArr := []uint8{ppu.ppuAddrMSB, ppu.ppuAddrLSB}
 	ppuWriteAddress := binary.BigEndian.Uint16(ppuAddressArr)
 
-	log.Printf("Write to ppu ram at address %x, base: %x, offset: %x, value: %x", ppuWriteAddress + ppu.ppuAddrOffset, ppuWriteAddress, ppu.ppuAddrOffset, value)
-
-	if ppuWriteAddress == 0x3f11 {
-		log.Println("Hello")
-	}
+	//log.Printf("Write to ppu ram at address %x, base: %x, offset: %x, value: %x", ppuWriteAddress + ppu.ppuAddrOffset, ppuWriteAddress, ppu.ppuAddrOffset, value)
 
 	ppu.Memory[ppuWriteAddress + ppu.ppuAddrOffset] = value
 
@@ -48,7 +43,7 @@ func (ppu *Ppu) setVBlank() {
 	ppu.nes.CPU.Memory[0x2002] |= 1 << 7
 
 	if (ppu.nes.CPU.Memory[0x2000] >> 7) & 1 == 1 {
-		log.Println("NMI Interrupt")
+		//log.Println("NMI Interrupt")
 		ppu.nes.CPU.handleNMI()
 	}
 }

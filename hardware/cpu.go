@@ -54,7 +54,7 @@ func (cpu *Cpu) runMainCpuLoop() {
 
 	for true {
 		opcode := cpu.Read8(cpu.PC)
-		cpu.RunInstruction(Instructions[opcode], true)
+		cpu.RunInstruction(Instructions[opcode], false)
 
 		time.Sleep(500 * time.Nanosecond)
 
@@ -67,13 +67,17 @@ func (cpu *Cpu) runMainCpuLoop() {
 				cpu.nes.PPU.clearVBlank()
 			}
 		}
+
+		if numOfInstructions % 50000 == 0 {
+			log.Printf("%+v", cpu.nes.PPU.Memory[0x2000:0x2400])
+		}
 	}
 }
 
 func (cpu *Cpu) Reset() {
 	// Read first instruction address location
-	//firstInstruction := cpu.Read16(0xFFFC)
-	firstInstruction := uint16(0xC000)
+	firstInstruction := cpu.Read16(0xFFFC)
+	//firstInstruction := uint16(0xC000)
 
 	// Set the PC to be at the address
 	cpu.PC = firstInstruction
