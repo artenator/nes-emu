@@ -54,5 +54,5 @@ func (ppu *Ppu) setVBlank() {
 }
 
 func (ppu *Ppu) clearVBlank() {
-	ppu.nes.CPU.Memory[0x2002] &= 0 << 7
+	ppu.nes.CPU.Memory[0x2002] &= ^(uint8(1) << 7)
 }

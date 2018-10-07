@@ -37,7 +37,19 @@ func (cpu *Cpu) Write8(addr uint16, value uint8) {
 	if addr < 0x2000 {
 		cpu.Memory[addr & 0x7FF] = value
 	} else if addr >= 0x2000 && addr < 0x4000 {
-		cpu.Memory[addr & 0x2007] = value
+		truncAddr := addr & 0x2007
+
+		cpu.Memory[truncAddr] = value
+
+		if addr >= 0x2000 && addr < 0x4000 {
+			if truncAddr == 0x2006 {
+				cpu.nes.PPU.setPpuAddr(cpu.A)
+			}
+
+			if truncAddr == 0x2007 {
+				cpu.nes.PPU.Write8(cpu.A)
+			}
+		}
 	} else {
 		cpu.Memory[addr] = value
 	}

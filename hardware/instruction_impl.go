@@ -87,19 +87,21 @@ func (cpu *Cpu) doRelativeBranch(value uint8) {
 	}
 }
 
-func (cpu *Cpu) RunInstruction(instr instruction) {
-	log.Printf("%x %+v %x PC:%x A: %x SP: %x X: %x Y: %x P: %x PPUADDR: %x PPUDATA: %x",
-		cpu.PC,
-		instr,
-		cpu.Memory[cpu.PC : cpu.PC + 1 + uint16(instr.bytes) - 1],
-		cpu.PC,
-		cpu.A,
-		cpu.SP,
-		cpu.X,
-		cpu.Y,
-		cpu.P,
-		cpu.Memory[0x2006],
-		cpu.Memory[0x2007],)
+func (cpu *Cpu) RunInstruction(instr instruction, doLog bool) {
+	if doLog {
+		log.Printf("%x %+v %x PC:%x A: %x SP: %x X: %x Y: %x P: %x PPUADDR: %x PPUDATA: %x",
+			cpu.PC,
+			instr,
+			cpu.Memory[cpu.PC : cpu.PC + 1 + uint16(instr.bytes) - 1],
+			cpu.PC,
+			cpu.A,
+			cpu.SP,
+			cpu.X,
+			cpu.Y,
+			cpu.P,
+			cpu.Memory[0x2006],
+			cpu.Memory[0x2007],)
+	}
 	
 	var addr uint16
 	var value uint8
@@ -142,7 +144,14 @@ func (cpu *Cpu) RunInstruction(instr instruction) {
 		value = cpu.Read8(addr)
 	case indX:
 		arg := cpu.Read8(cpu.PC + 1)
-		addr = cpu.Read16(uint16(arg + cpu.X) & 0xFF)
+		addrLocation := uint16(arg + cpu.X) & 0xFF
+		if addrLocation == 0xFF {
+			lowByte := cpu.Read8(0xFF)
+			highByte := cpu.Read8(0x00)
+			addr = uint16(lowByte) | (uint16(highByte) << 8)
+		} else {
+			addr = cpu.Read16(addrLocation)
+		}
 		value = cpu.Read8(addr)
 	case indY:
 		arg := cpu.Read8(cpu.PC + 1)
@@ -219,6 +228,8 @@ func (cpu *Cpu) RunInstruction(instr instruction) {
 		cpu.INX(instr, addr, value)
 	case "INY":
 		cpu.INY(instr, addr, value)
+	case "ISC":
+		cpu.ISC(instr, addr, value)
 	case "JMP":
 		cpu.JMP(instr, addr, value)
 	case "JSR":
@@ -245,14 +256,20 @@ func (cpu *Cpu) RunInstruction(instr instruction) {
 		cpu.PLA(instr, addr, value)
 	case "PLP":
 		cpu.PLP(instr, addr, value)
+	case "RLA":
+		cpu.RLA(instr, addr, value)
 	case "ROL":
 		cpu.ROL(instr, addr, value)
 	case "ROR":
 		cpu.ROR(instr, addr, value)
+	case "RRA":
+		cpu.RRA(instr, addr, value)
 	case "RTI":
 		cpu.RTI(instr, addr, value)
 	case "RTS":
 		cpu.RTS(instr, addr, value)
+	case "SAX":
+		cpu.SAX(instr, addr, value)
 	case "SBC":
 		cpu.SBC(instr, addr, value)
 	case "SEC":
@@ -261,6 +278,10 @@ func (cpu *Cpu) RunInstruction(instr instruction) {
 		cpu.SED(instr, addr, value)
 	case "SEI":
 		cpu.SEI(instr, addr, value)
+	case "SLO":
+		cpu.SLO(instr, addr, value)
+	case "SRE":
+		cpu.SRE(instr, addr, value)
 	case "STA":
 		cpu.STA(instr, addr, value)
 	case "STX":
@@ -289,10 +310,10 @@ func (cpu *Cpu) RunInstruction(instr instruction) {
 // Sets flags accordingly ZCN
 func (cpu *Cpu) ADC(instr instruction, addr uint16, value uint8) {
 	// Calculate the result
-	result := cpu.A + value + getBit(cpu.P, 7)
+	result := cpu.A + value + getBit(cpu.P, 0)
 	
 	// Set the carry flag if unsigned overflow occurs
-	if uint16(cpu.A) + uint16(value) + uint16(getBit(cpu.P, 7)) > 0xFF {
+	if uint16(cpu.A) + uint16(value) + uint16(getBit(cpu.P, 0)) > 0xFF {
 		cpu.setCarry()
 	} else {
 		cpu.clearCarry()
@@ -420,21 +441,21 @@ func (cpu *Cpu) BIT(instr instruction, addr uint16, value uint8) {
 	result := cpu.A & value
 
 	// Set zero flag if result is 0
-        if result == 0 {
+	if result == 0 {
 		cpu.setZero()
 	} else {
 		cpu.clearZero()
 	}
 
 	// Set Overflow to bit 6
-	if getBit(result, 6) == 1 {
+	if getBit(value, 6) == 1 {
 		cpu.setOverflow()
 	} else {
 		cpu.clearOverflow()
 	}
 
 	// Set the sign bit if bit 7 is 1
-	if getBit(result, 7) > 0 {
+	if getBit(value, 7) > 0 {
 		cpu.setNegative()
 	} else {
 		cpu.clearNegative()
@@ -476,7 +497,7 @@ func (cpu *Cpu) BRK(instr instruction, addr uint16, value uint8) {
 	cpu.Push16(cpu.PC)
 
 	cpu.setBreak()
-	cpu.Push8(cpu.P)
+	cpu.Push8(cpu.P | 0x30)
 
 	cpu.setInterrupt()
 	
@@ -518,9 +539,7 @@ func (cpu *Cpu) CLV(instr instruction, addr uint16, value uint8) {
 }
 
 func (cpu *Cpu) cmpVals(x, y uint8) {
-	if cpu.PC == 0xc7ed {
-		log.Println("hello")
-	}
+
 	// Compute the result
         compareResult := x - y
 
@@ -651,6 +670,24 @@ func (cpu *Cpu) INY(instr instruction, addr uint16, value uint8) {
 	cpu.setNHelper(result)
 }
 
+// ISC - Increment from Y register
+func (cpu *Cpu) ISC(instr instruction, addr uint16, value uint8) {
+	oldBit7 := getBit(cpu.A, 7)
+
+	result := value + 1
+	cpu.A -= result
+
+	if oldBit7 != getBit(cpu.A, 7) {
+		cpu.setOverflow()
+	} else {
+		cpu.clearOverflow()
+	}
+
+	cpu.setCHelper(oldBit7)
+	cpu.setZHelper(result)
+	cpu.setNHelper(result)
+}
+
 // JMP - jump to address
 func (cpu *Cpu) JMP(instr instruction, addr uint16, value uint8) {
         cpu.PC = addr
@@ -674,6 +711,10 @@ func (cpu *Cpu) LAX(instr instruction, addr uint16, value uint8) {
 
 // LDA - load acc with mem location
 func (cpu *Cpu) LDA(instr instruction, addr uint16, value uint8) {
+	if cpu.PC == 0xd01f {
+		log.Println("Hello")
+	}
+
 	cpu.A = value
 
 	cpu.setZHelper(value)
@@ -767,9 +808,24 @@ func (cpu *Cpu) setCHelper(x uint8) {
 	}
 }
 
+// RLA - rotate memory left, then and with the acc
+func (cpu *Cpu) RLA(instr instruction, addr uint16, value uint8) {
+	oldBit7 := getBit(value, 7)
+	var result uint8
+
+	result = (value << 1) | getBit(cpu.P, 0)
+	cpu.setCHelper(oldBit7)
+	cpu.setNHelper(result)
+	cpu.setZHelper(result)
+
+	cpu.Write8(addr, result)
+
+	cpu.A &= result
+}
+
 // ROL - rotate left
 func (cpu *Cpu) ROL(instr instruction, addr uint16, value uint8) {
-        oldBit7 := getBit(value, 7)
+	oldBit7 := getBit(value, 7)
 	var result uint8
 	
 	result = (value << 1) | getBit(cpu.P, 0)
@@ -777,7 +833,7 @@ func (cpu *Cpu) ROL(instr instruction, addr uint16, value uint8) {
 	cpu.setNHelper(result)
 	cpu.setZHelper(result)
 
-        if instr.mode == A {
+	if instr.mode == A {
 		cpu.A = result
 	} else {
 		cpu.Write8(addr, result)
@@ -789,15 +845,37 @@ func (cpu *Cpu) ROR(instr instruction, addr uint16, value uint8) {
 	oldBit0 := getBit(value, 0)
 	var result uint8
 	
-	result = (value >> 1) | (getBit(cpu.P, 7) << 7)
+	result = (value >> 1) | (getBit(cpu.P, 0) << 7)
 	cpu.setCHelper(oldBit0)
 	cpu.setNHelper(result)
 	cpu.setZHelper(result)
 
-        if instr.mode == A {
+	if instr.mode == A {
 		cpu.A = result
 	} else {
 		cpu.Write8(addr, result)
+	}
+}
+
+// RRA - rotate memory right, then add to the acc
+func (cpu *Cpu) RRA(instr instruction, addr uint16, value uint8) {
+	oldBit7 := getBit(value, 7)
+	var result uint8
+
+	result = (value >> 1) | getBit(cpu.P, 0)
+	cpu.setCHelper(oldBit7)
+	cpu.setNHelper(result)
+	cpu.setZHelper(result)
+
+	cpu.Write8(addr, result)
+
+	cpu.A += result
+
+	// Set the overflow flag
+	if ((cpu.A ^ result) & (value ^ result) & 0x80) > 0 {
+		cpu.setOverflow()
+	} else {
+		cpu.clearOverflow()
 	}
 }
 
@@ -806,7 +884,7 @@ func (cpu *Cpu) RTI(instr instruction, addr uint16, value uint8) {
 	processorStatus := cpu.Pop8()
 	returnAddress := cpu.Pop16()
 	
-	cpu.P = processorStatus
+	cpu.P = processorStatus | 0x20
 	cpu.PC = returnAddress
 }
 
@@ -817,20 +895,29 @@ func (cpu *Cpu) RTS(instr instruction, addr uint16, value uint8) {
 	cpu.PC = returnAddress
 }
 
+// SAX - and x register with acc and store in memory
+func (cpu *Cpu) SAX(instr instruction, addr uint16, value uint8) {
+	result := cpu.A & cpu.X
+	cpu.Write8(addr, result)
+
+	cpu.setZHelper(result)
+	cpu.setNHelper(result)
+}
+
 // SBC - Subtract with Carry
 func (cpu *Cpu) SBC(instr instruction, addr uint16, value uint8) {
 	// TODO: understand why this can be implemented like this
-        cpu.ADC(instr, addr, ^value)
+	cpu.ADC(instr, addr, ^value)
 }
 
 // SEC - Set Carry Flag
 func (cpu *Cpu) SEC(instr instruction, addr uint16, value uint8) {
-        cpu.setCarry()
+	cpu.setCarry()
 }
 
 // SED - Set Decimal Flag
 func (cpu *Cpu) SED(instr instruction, addr uint16, value uint8) {
-        cpu.setDecimal()
+	cpu.setDecimal()
 }
 
 // SEI - Set Interrupt Disable
@@ -839,63 +926,87 @@ func (cpu *Cpu) SEI(instr instruction, addr uint16, value uint8) {
 	cpu.setInterrupt()
 }
 
+// SLO - shifts memory left, then ors acc with memory
+func (cpu *Cpu) SLO(instr instruction, addr uint16, value uint8) {
+	oldBit7 := getBit(value, 7)
+	result := value << 1
+	cpu.Write8(addr, result)
+	cpu.A |= result
+
+	cpu.setCHelper(oldBit7)
+	cpu.setZHelper(cpu.A)
+	cpu.setNHelper(cpu.A)
+}
+
+// SRE - shifts memory right, then XORS acc with memory
+func (cpu *Cpu) SRE(instr instruction, addr uint16, value uint8) {
+	oldBit7 := getBit(value, 7)
+	result := value >> 1
+	cpu.Write8(addr, result)
+	cpu.A ^= result
+
+	cpu.setCHelper(oldBit7)
+	cpu.setZHelper(cpu.A)
+	cpu.setNHelper(cpu.A)
+}
+
 // STA - store acc in memory
 func (cpu *Cpu) STA(instr instruction, addr uint16, value uint8) {
-	cpu.Write8(addr, cpu.A)
-
-	if addr >= 0x2000 && addr < 0x4000 {
-		truncAddr := addr & 0x2007
-
-		if truncAddr == 0x2006 {
-			cpu.nes.PPU.setPpuAddr(cpu.A)
-		}
-
-		if truncAddr == 0x2007 {
-			cpu.nes.PPU.Write8(cpu.A)
-		}
+	if cpu.PC == 0xd00B {
+		log.Println("Hello")
 	}
+	cpu.Write8(addr, cpu.A)
 }
 
 // STX - store X in memory
 func (cpu *Cpu) STX(instr instruction, addr uint16, value uint8) {
-        cpu.Write8(addr, cpu.X)
+	cpu.Write8(addr, cpu.X)
 }
 
 // STY - store acc in memory
 func (cpu *Cpu) STY(instr instruction, addr uint16, value uint8) {
-        cpu.Write8(addr, cpu.Y)
+	cpu.Write8(addr, cpu.Y)
 }
 
 // TAX - transfer acc to X
 func (cpu *Cpu) TAX(instr instruction, addr uint16, value uint8) {
-        cpu.X = cpu.A
-        cpu.setZHelper(cpu.X)
-        cpu.setNHelper(cpu.X)
+	cpu.X = cpu.A
+	cpu.setZHelper(cpu.X)
+	cpu.setNHelper(cpu.X)
 }
 
 // TAY - transfer acc to Y
 func (cpu *Cpu) TAY(instr instruction, addr uint16, value uint8) {
-        cpu.Y = cpu.A
-		cpu.setZHelper(cpu.Y)
-		cpu.setNHelper(cpu.Y)
+	cpu.Y = cpu.A
+	cpu.setZHelper(cpu.Y)
+	cpu.setNHelper(cpu.Y)
 }
 
 // TSX - transfer sp to X
 func (cpu *Cpu) TSX(instr instruction, addr uint16, value uint8) {
-        cpu.X = cpu.SP
+	cpu.X = cpu.SP
+
+	cpu.setZHelper(cpu.X)
+	cpu.setNHelper(cpu.X)
 }
 
 // TXA - transfer x to acc
 func (cpu *Cpu) TXA(instr instruction, addr uint16, value uint8) {
-        cpu.A = cpu.X
+	cpu.A = cpu.X
+
+	cpu.setZHelper(cpu.A)
+	cpu.setNHelper(cpu.A)
 }
 
 // TXS - transfer x to sp
 func (cpu *Cpu) TXS(instr instruction, addr uint16, value uint8) {
-        cpu.SP = cpu.X
+	cpu.SP = cpu.X
 }
 
 // TYA - transfer y to acc
 func (cpu *Cpu) TYA(instr instruction, addr uint16, value uint8) {
-        cpu.A = cpu.Y
+	cpu.A = cpu.Y
+
+	cpu.setZHelper(cpu.A)
+	cpu.setNHelper(cpu.A)
 }

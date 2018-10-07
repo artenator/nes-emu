@@ -36,23 +36,7 @@ type Cpu struct {
 	Memory [0x10000]byte
 }
 
-func (cpu *Cpu) Reset() {
-	// Read first instruction address location
-	//firstInstruction := cpu.Read16(0xFFFC)
-	firstInstruction := uint16(0xC000)
-	// Set the PC to be at the address
-	cpu.PC = firstInstruction
-
-	// number of instructions ran
-	var numOfInstructions uint = 0
-	
-	firstInstructionOpcode := cpu.Read8(firstInstruction)
-	
-	log.Printf("First Instruction is at address %x", firstInstruction)
-	log.Printf("First Instruction has opcode %x", firstInstructionOpcode)
-	log.Println("First opcode is ")
-	log.Printf("%+v\n", Instructions[firstInstructionOpcode])
-
+func (cpu *Cpu) setCpuInitialState() {
 	// Set initial flags
 	cpu.P = 0x24
 
@@ -61,11 +45,16 @@ func (cpu *Cpu) Reset() {
 	cpu.Memory[0x2002] = 0xA0
 
 	// initialize the stack pointer
-	cpu.SP = 0xFF
+	cpu.SP = 0xFD
+}
+
+func (cpu *Cpu) runMainCpuLoop() {
+	// number of instructions ran
+	var numOfInstructions uint = 0
 
 	for true {
 		opcode := cpu.Read8(cpu.PC)
-		cpu.RunInstruction(Instructions[opcode])
+		cpu.RunInstruction(Instructions[opcode], true)
 
 		time.Sleep(500 * time.Nanosecond)
 
@@ -79,6 +68,26 @@ func (cpu *Cpu) Reset() {
 			}
 		}
 	}
+}
+
+func (cpu *Cpu) Reset() {
+	// Read first instruction address location
+	//firstInstruction := cpu.Read16(0xFFFC)
+	firstInstruction := uint16(0xC000)
+
+	// Set the PC to be at the address
+	cpu.PC = firstInstruction
+	
+	firstInstructionOpcode := cpu.Read8(firstInstruction)
+	
+	log.Printf("First Instruction is at address %x", firstInstruction)
+	log.Printf("First Instruction has opcode %x", firstInstructionOpcode)
+	log.Println("First opcode is ")
+	log.Printf("%+v\n", Instructions[firstInstructionOpcode])
+
+	cpu.setCpuInitialState()
+
+	cpu.runMainCpuLoop()
 
 	// print the whole CPU and memory!!
 	log.Printf("%+v\n", cpu)
