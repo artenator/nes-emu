@@ -711,10 +711,6 @@ func (cpu *Cpu) LAX(instr instruction, addr uint16, value uint8) {
 
 // LDA - load acc with mem location
 func (cpu *Cpu) LDA(instr instruction, addr uint16, value uint8) {
-	if cpu.PC == 0xd01f {
-		log.Println("Hello")
-	}
-
 	cpu.A = value
 
 	cpu.setZHelper(value)
@@ -784,9 +780,6 @@ func (cpu *Cpu) PHP(instr instruction, addr uint16, value uint8) {
 
 // PLA - Pull Accumulator
 func (cpu *Cpu) PLA(instr instruction, addr uint16, value uint8) {
-	if cpu.PC == 0xc7e9 {
-		log.Println("Hello")
-	}
 	poppedValue := cpu.Pop8()
 	cpu.A = poppedValue
 
@@ -952,9 +945,6 @@ func (cpu *Cpu) SRE(instr instruction, addr uint16, value uint8) {
 
 // STA - store acc in memory
 func (cpu *Cpu) STA(instr instruction, addr uint16, value uint8) {
-	if cpu.PC == 0xd00B {
-		log.Println("Hello")
-	}
 	cpu.Write8(addr, cpu.A)
 }
 

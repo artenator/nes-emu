@@ -86,7 +86,7 @@ func TestCpu(t *testing.T) {
 
 	opcode := nes.CPU.Read8(nes.CPU.PC)
 
-	for opcode != 0x00 && numOfInstructions < 1200 {
+	for opcode != 0x00 && numOfInstructions < 1300 {
 		if nes.CPU.PC != expected[numOfInstructions].PC {
 			t.Errorf("Wrong PC. Expected %02x but got %02x\n %+v\nPC:%02x", expected[numOfInstructions].PC, nes.CPU.PC, Instructions[opcode], nes.CPU.PC)
 		}
