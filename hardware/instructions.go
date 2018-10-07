@@ -196,7 +196,7 @@ var Instructions = [256]instruction{
 	instruction{
 		"ORA",
 		0x0D,
-		1,
+		3,
 		3,
 		abs,},
 	// ASL - Absolute
@@ -859,7 +859,7 @@ var Instructions = [256]instruction{
 		imm,},
 	// JMP - Indirect 
 	instruction{
-		"EOR",
+		"JMP",
 		0x6C,
 		3,
 		5,

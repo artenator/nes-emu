@@ -155,7 +155,14 @@ func (cpu *Cpu) RunInstruction(instr instruction, doLog bool) {
 		value = cpu.Read8(addr)
 	case indY:
 		arg := cpu.Read8(cpu.PC + 1)
-		addr = cpu.Read16(uint16(arg)) + uint16(cpu.Y)
+		addrLocation := uint16(arg)
+		if addrLocation == 0xFF {
+			lowByte := cpu.Read8(0xFF)
+			highByte := cpu.Read8(0x00)
+			addr = uint16(lowByte) | (uint16(highByte) << 8) + uint16(cpu.Y)
+		} else {
+			addr = cpu.Read16(addrLocation) + uint16(cpu.Y)
+		}
 		value = cpu.Read8(addr)
 	case rel:
 		arg := cpu.Read8(cpu.PC + 1)
@@ -646,7 +653,7 @@ func (cpu *Cpu) EOR(instr instruction, addr uint16, value uint8) {
 // INC - Increment from memory
 func (cpu *Cpu) INC(instr instruction, addr uint16, value uint8) {
 	result := value + 1
-        cpu.Write8(addr, value)
+	cpu.Write8(addr, result)
 	
 	cpu.setZHelper(result)
 	cpu.setNHelper(result)
