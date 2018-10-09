@@ -67,7 +67,7 @@ func CreateCartridge(filename string) (Cartridge, error) {
 
 			// load chr and prg rom data
 			c.prgRom = romNoHeader[0:0x4000 * uint(c.prgRomBlocks)]
-			c.chrRom = romNoHeader[0:0x2000 * uint(c.chrRomBlocks)]
+			c.chrRom = romNoHeader[0x4000:0x4000 + (0x2000 * uint(c.chrRomBlocks))]
                         
 		} else {
 			log.Println("This is not a valid NES rom.")

@@ -56,6 +56,8 @@ func (cpu *Cpu) runMainCpuLoop() {
 		opcode := cpu.Read8(cpu.PC)
 		cpu.RunInstruction(Instructions[opcode], false)
 
+		log.Printf("%+v", cpu.nes.PPU.get8x8Tile(0x1000, 0xD3))
+
 		time.Sleep(500 * time.Nanosecond)
 
 		numOfInstructions++

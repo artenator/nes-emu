@@ -56,9 +56,9 @@ func (ppu *Ppu) clearVBlank() {
 	ppu.nes.CPU.Memory[0x2002] &= ^(uint8(1) << 7)
 }
 
-func (ppu *Ppu) get8x8Tile(base uint16, pos uint8) [8][8]uint8 {
-	b0 := ppu.Memory[base : base + 8]
-	b1 := ppu.Memory[base + 8 : base + 16]
+func (ppu *Ppu) get8x8Tile(base uint16, pos uint16) [8][8]uint8 {
+	b0 := ppu.Memory[base + (pos * 0x10) : base + (pos * 0x10) + 8]
+	b1 := ppu.Memory[base + (pos * 0x10) + 8 : base + (pos * 0x10) + 16]
 
 	var result [8][8]uint8
 
@@ -67,8 +67,8 @@ func (ppu *Ppu) get8x8Tile(base uint16, pos uint8) [8][8]uint8 {
 		barr1 := b1[i]
 		for j := uint8(0); j < 8; j++ {
 			var biResult uint8
-			biResult |= (barr0 >> j) & 1
-			biResult |= ((barr1 >> j) & 1) << 1
+			biResult |= (barr0 >> (7 - j)) & 1
+			biResult |= ((barr1 >> (7 - j)) & 1) << 1
 			result[i][j] = biResult
 		}
 	}
