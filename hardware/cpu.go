@@ -69,7 +69,7 @@ func (cpu *Cpu) runMainCpuLoop() {
 		}
 
 		if numOfInstructions % 50000 == 0 {
-			log.Printf("%+v", cpu.nes.PPU.Memory[0x2000:0x2400])
+			//log.Printf("%+v", cpu.nes.PPU.Memory[0x2000:0x2400])
 		}
 	}
 }
@@ -81,13 +81,6 @@ func (cpu *Cpu) Reset() {
 
 	// Set the PC to be at the address
 	cpu.PC = firstInstruction
-	
-	firstInstructionOpcode := cpu.Read8(firstInstruction)
-	
-	log.Printf("First Instruction is at address %x", firstInstruction)
-	log.Printf("First Instruction has opcode %x", firstInstructionOpcode)
-	log.Println("First opcode is ")
-	log.Printf("%+v\n", Instructions[firstInstructionOpcode])
 
 	cpu.setCpuInitialState()
 
