@@ -56,17 +56,15 @@ func (cpu *Cpu) runMainCpuLoop() {
 		opcode := cpu.Read8(cpu.PC)
 		cpu.RunInstruction(Instructions[opcode], false)
 
-		log.Printf("%+v", cpu.nes.PPU.get8x8Tile(0x1000, 0xD3))
-
 		time.Sleep(500 * time.Nanosecond)
 
 		numOfInstructions++
 
 		if numOfInstructions % 100 == 0 {
 			if (cpu.Memory[0x2002] >> 7) & 1 == 0 {
-				cpu.nes.PPU.setVBlank()
+				cpu.nes.PPU.SetVBlank()
 			} else {
-				cpu.nes.PPU.clearVBlank()
+				cpu.nes.PPU.ClearVBlank()
 			}
 		}
 
@@ -86,7 +84,7 @@ func (cpu *Cpu) Reset() {
 
 	cpu.setCpuInitialState()
 
-	cpu.runMainCpuLoop()
+	//cpu.runMainCpuLoop()
 
 	// print the whole CPU and memory!!
 	log.Printf("%+v\n", cpu)
