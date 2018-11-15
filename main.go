@@ -18,6 +18,25 @@ func drawPixel(c hardware.Color, x, y float64) {
 	imd.Rectangle(0)
 }
 
+func runNES(nes hardware.NES, numOfInstructions * uint) {
+	for true {
+		opcode := nes.CPU.Read8(nes.CPU.PC)
+		nes.CPU.RunInstruction(hardware.Instructions[opcode], false)
+
+		//time.Sleep(500 * time.Nanosecond)
+
+		*numOfInstructions++
+
+		if *numOfInstructions % 1000 == 0 {
+			if (nes.CPU.Memory[0x2002] >> 7) & 1 == 0 {
+				nes.PPU.SetVBlank()
+			} else {
+				nes.PPU.ClearVBlank()
+			}
+		}
+	}
+}
+
 func run() {
 	// all of our code will be fired up from here
 	cfg := pixelgl.WindowConfig{
@@ -48,36 +67,29 @@ func run() {
 
 	var numOfInstructions uint = 0
 
+	go runNES(nes, &numOfInstructions)
+
 	// main drawing loop
 	for !win.Closed() {
 		imd.Clear()
 
-		opcode := nes.CPU.Read8(nes.CPU.PC)
-		nes.CPU.RunInstruction(hardware.Instructions[opcode], false)
 
-		//time.Sleep(500 * time.Nanosecond)
 
-		numOfInstructions++
+		if numOfInstructions % 1000 == 0 {
 
-		if numOfInstructions % 100 == 0 {
-			if (nes.CPU.Memory[0x2002] >> 7) & 1 == 0 {
-				nes.PPU.SetVBlank()
-			} else {
-				nes.PPU.ClearVBlank()
-			}
-		}
-
-		if numOfInstructions % 2000 == 0 {
 			for y := 0; y < 240; y++ {
 				for x := 0; x < 256; x++ {
 					drawPixel(nes.PPU.GetColorAtPixel(uint8(x), uint8(y)), float64(x), float64(239 - y))
 				}
 			}
+
 			win.Clear(colornames.Black)
 			imd.Draw(win)
 			win.Update()
 			//log.Println("drawing to screen...")
 			//log.Printf("%+v", nes.PPU.Memory[0x2000:0x2050])
+		} else {
+			win.Update()
 		}
 
 
