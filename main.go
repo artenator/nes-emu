@@ -12,7 +12,7 @@ import (
 var imd = imdraw.New(nil)
 
 func drawPixel(c hardware.Color, x, y float64) {
-	imd.Color = pixel.RGB(float64(c.R), float64(c.G), float64(c.B))
+	imd.Color = pixel.RGB(float64(float64(c.R) / 255), float64(float64(c.G) / 255), float64(float64(c.B) / 255))
 	imd.Push(pixel.V(x + 1, y + 1))
 	imd.Push(pixel.V(x, y))
 	imd.Rectangle(0)
@@ -20,19 +20,19 @@ func drawPixel(c hardware.Color, x, y float64) {
 
 func runNES(nes hardware.NES, numOfInstructions * uint) {
 	for true {
+		wait := 0
 		opcode := nes.CPU.Read8(nes.CPU.PC)
 		nes.CPU.RunInstruction(hardware.Instructions[opcode], false)
 
-		//time.Sleep(500 * time.Nanosecond)
+		//time.Sleep(1 * time.Nanosecond)
+		for wait < 100000 {
+			wait += 1
+		}
 
 		*numOfInstructions++
 
-		if *numOfInstructions % 1000 == 0 {
-			if (nes.CPU.Memory[0x2002] >> 7) & 1 == 0 {
-				nes.PPU.SetVBlank()
-			} else {
-				nes.PPU.ClearVBlank()
-			}
+		if (nes.CPU.Memory[0x2002] >> 7) & 1 == 1  && (nes.CPU.Memory[0x2000] >> 7) & 1 == 1 && *numOfInstructions % 1000 == 0{
+			nes.CPU.HandleNMI()
 		}
 	}
 }
@@ -73,13 +73,17 @@ func run() {
 	for !win.Closed() {
 		imd.Clear()
 
-
-
-		if numOfInstructions % 1000 == 0 {
-
+		if numOfInstructions % 500 == 0 {
 			for y := 0; y < 240; y++ {
+				if y == 1 {
+					nes.PPU.ClearVBlank()
+				}
 				for x := 0; x < 256; x++ {
 					drawPixel(nes.PPU.GetColorAtPixel(uint8(x), uint8(y)), float64(x), float64(239 - y))
+				}
+				if y == 200 {
+					nes.PPU.SetVBlank()
+
 				}
 			}
 

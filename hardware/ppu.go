@@ -48,7 +48,7 @@ func (ppu *Ppu) SetVBlank() {
 
 	if (ppu.nes.CPU.Memory[0x2000] >> 7) & 1 == 1 {
 		//log.Println("NMI Interrupt")
-		ppu.nes.CPU.handleNMI()
+		//ppu.nes.CPU.handleNMI()
 	}
 }
 
@@ -79,7 +79,7 @@ func (ppu *Ppu) get8x8Tile(base uint16, pos uint16) [8][8]uint8 {
 func (ppu *Ppu) get2x2Attribute(base uint16, pos uint8) [2][2]uint8 {
 	var result [2][2]uint8
 
-	b := ppu.Memory[uint16(pos) + 0x3C0]
+	b := ppu.Memory[0x2000 + 0x3C0 + uint16(pos)]
 
 	result[0][0] = b & 0x03
 	result[0][1] = (b & 0x0C) >> 2
@@ -139,12 +139,8 @@ func (ppu *Ppu) GetColorAtPixel(x, y uint8) Color {
 	xAttr := ((x / 16) % 16) % 2
 	yAttr := ((y / 16) % 16) % 2
 
-	bgColorPalette := ppu.getBackgroundColorPalette(attributeTile[xAttr][yAttr])
+	bgColorPalette := ppu.getBackgroundColorPalette(attributeTile[yAttr][xAttr])
 	bgColor := bgColorPalette[backgroundTile[yBG][xBG]]
-
-	if ppu.Memory[0x3f00] == 0x0f && x > 250 && y > 230 {
-		//log.Println("Hello ")
-	}
 
 	return bgColor
 }

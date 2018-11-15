@@ -90,7 +90,7 @@ func (cpu *Cpu) Reset() {
 	log.Printf("%+v\n", cpu)
 }
 
-func (cpu *Cpu) handleNMI() {
+func (cpu *Cpu) HandleNMI() {
 	// Push current pc to the stack
 	cpu.Push16(cpu.PC)
 
