@@ -12,6 +12,7 @@ type Ppu struct {
 	ppuAddrLSB     uint8
 	ppuAddrOffset  uint16
 	oamAddr        uint8
+	oamSpriteAddr  uint8
 	OAM            [0x40]Sprite
 }
 
@@ -121,6 +122,41 @@ func (ppu *Ppu) getBackgroundColorPalette(pos uint8) [4]Color {
 	return [4]Color{}
 }
 
+func (ppu *Ppu) getSpriteColorPalette(pos uint8) [4]Color {
+	switch pos {
+	case 0:
+		return [4]Color{
+			palette[ppu.Read8(0x3F00)],
+			palette[ppu.Read8(0x3F11)],
+			palette[ppu.Read8(0x3F12)],
+			palette[ppu.Read8(0x3F13)],
+		}
+	case 1:
+		return [4]Color{
+			palette[ppu.Read8(0x3F00)],
+			palette[ppu.Read8(0x3F15)],
+			palette[ppu.Read8(0x3F16)],
+			palette[ppu.Read8(0x3F17)],
+		}
+	case 2:
+		return [4]Color{
+			palette[ppu.Read8(0x3F00)],
+			palette[ppu.Read8(0x3F19)],
+			palette[ppu.Read8(0x3F1A)],
+			palette[ppu.Read8(0x3F1B)],
+		}
+	case 3:
+		return [4]Color{
+			palette[ppu.Read8(0x3F00)],
+			palette[ppu.Read8(0x3F1D)],
+			palette[ppu.Read8(0x3F1E)],
+			palette[ppu.Read8(0x3F1F)],
+		}
+	}
+
+	return [4]Color{}
+}
+
 func (ppu *Ppu) getBackgroundColorAtPixel(x, y uint8) Color {
 	backgroundTileBase := uint16((ppu.nes.CPU.Memory[0x2000]>>4)&1) * 0x1000
 	backgroundTileOffset := (uint16(y/8) * 32) + (uint16(x/8) % 32)
@@ -142,23 +178,26 @@ func (ppu *Ppu) getBackgroundColorAtPixel(x, y uint8) Color {
 }
 
 func (ppu *Ppu) getSpriteColorAtPixel(x, y uint8, s Sprite) Color {
+	flipHorizontal := false
+	if (s.attributes >> 6) & 1 == 1 {
+		flipHorizontal = true
+	}
+
 	backgroundTileBase := uint16((ppu.nes.CPU.Memory[0x2000]>>3)&1) * 0x1000
-	backgroundTileOffset := s.tileNum
-	backgroundTilePos := ppu.Memory[0x2000+uint16(backgroundTileOffset)]
+	backgroundTilePos := s.tileNum
 
 	backgroundTile := ppu.get8x8Tile(backgroundTileBase, uint16(backgroundTilePos))
 	xBG := x % 8
+	if flipHorizontal {
+		xBG = 7 - x % 8
+	}
+
 	yBG := y % 8
 
-	attributePalettePos := ((y / 32) * 8) + ((x / 32) % 32)
-	attributeTile := ppu.get2x2Attribute(backgroundTileBase, attributePalettePos)
-	xAttr := ((x / 16) % 16) % 2
-	yAttr := ((y / 16) % 16) % 2
+	spriteColorPalette := ppu.getSpriteColorPalette(s.attributes & 0x03)
+	spriteColor := spriteColorPalette[backgroundTile[yBG][xBG]]
 
-	bgColorPalette := ppu.getBackgroundColorPalette(attributeTile[yAttr][xAttr])
-	bgColor := bgColorPalette[backgroundTile[yBG][xBG]]
-
-	return bgColor
+	return spriteColor
 }
 
 func (ppu *Ppu) GetColorAtPixel(x, y uint8) Color {
@@ -168,9 +207,9 @@ func (ppu *Ppu) GetColorAtPixel(x, y uint8) Color {
 		if sprite.yCoord > 0x00 && sprite.yCoord < 0xEF {
 			// TODO: 8x16 sprites
 			inRangeX := x >= sprite.xCoord && x < sprite.xCoord+8
-			inRangeY := x >= sprite.yCoord && x < sprite.yCoord+8
+			inRangeY := y >= sprite.yCoord && y < sprite.yCoord+8
 			if inRangeX && inRangeY {
-				return ppu.getSpriteColorAtPixel(x, y, sprite)
+				return ppu.getSpriteColorAtPixel(x - sprite.xCoord, y - sprite.yCoord, sprite)
 			}
 		}
 	}

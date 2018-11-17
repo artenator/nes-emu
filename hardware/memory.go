@@ -60,7 +60,17 @@ func (cpu *Cpu) Write8(addr uint16, value uint8) {
 
 		}
 	} else {
-		cpu.Memory[addr] = value
+		// OAMDATA
+		if addr == 0x4014 {
+			for _, b := range cpu.Memory[0x200:0x300] {
+				cpu.nes.PPU.WriteOAM8(b)
+			}
+			cpu.nes.PPU.SetOamAddr(0)
+			cpu.nes.PPU.oamSpriteAddr = 0
+		} else {
+			cpu.Memory[addr] = value
+		}
+
 	}
 }
 

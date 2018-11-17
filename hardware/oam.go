@@ -1,7 +1,5 @@
 package hardware
 
-import ()
-
 type Sprite struct {
 	yCoord     uint8
 	tileNum    uint8
@@ -12,13 +10,14 @@ type Sprite struct {
 func (ppu *Ppu) WriteOAM8(value uint8) {
 	switch ppu.oamAddr % 4 {
 	case 0:
-		ppu.OAM[ppu.oamAddr%64].yCoord = value
+		ppu.OAM[ppu.oamSpriteAddr%64].yCoord = value
 	case 1:
-		ppu.OAM[ppu.oamAddr%64].tileNum = value
+		ppu.OAM[ppu.oamSpriteAddr%64].tileNum = value
 	case 2:
-		ppu.OAM[ppu.oamAddr%64].attributes = value
+		ppu.OAM[ppu.oamSpriteAddr%64].attributes = value
 	case 3:
-		ppu.OAM[ppu.oamAddr%64].xCoord = value
+		ppu.OAM[ppu.oamSpriteAddr%64].xCoord = value
+		ppu.oamSpriteAddr++
 	}
 
 	ppu.oamAddr++

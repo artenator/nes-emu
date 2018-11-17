@@ -25,7 +25,7 @@ func runNES(nes hardware.NES, numOfInstructions *uint) {
 		nes.CPU.RunInstruction(hardware.Instructions[opcode], false)
 
 		//time.Sleep(1 * time.Nanosecond)
-		for wait < 100000 {
+		for wait < 10000 {
 			wait++
 		}
 
@@ -74,7 +74,7 @@ func run() {
 	for !win.Closed() {
 		imd.Clear()
 
-		if numOfInstructions%500 == 0 {
+		if numOfInstructions%200 == 0 {
 			for y := 0; y < 240; y++ {
 				if y == 1 {
 					nes.PPU.ClearVBlank()
@@ -82,11 +82,9 @@ func run() {
 				for x := 0; x < 256; x++ {
 					drawPixel(nes.PPU.GetColorAtPixel(uint8(x), uint8(y)), float64(x), float64(239-y))
 				}
-				if y == 200 {
-					nes.PPU.SetVBlank()
-
-				}
 			}
+
+			nes.PPU.SetVBlank()
 
 			win.Clear(colornames.Black)
 			imd.Draw(win)
