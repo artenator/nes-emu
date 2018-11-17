@@ -197,11 +197,18 @@ func (ppu *Ppu) getSpriteColorAtPixel(x, y uint8, s Sprite) Color {
 	spriteColorPalette := ppu.getSpriteColorPalette(s.attributes & 0x03)
 	spriteColor := spriteColorPalette[backgroundTile[yBG][xBG]]
 
+	// Check if sprites hide background
+	if backgroundTile[yBG][xBG] == 0 {
+		spriteColor.A = 0
+	}
+
 	return spriteColor
 }
 
 func (ppu *Ppu) GetColorAtPixel(x, y uint8) Color {
 	var color Color
+
+	color = ppu.getBackgroundColorAtPixel(x, y)
 
 	for _, sprite := range ppu.OAM {
 		if sprite.yCoord > 0x00 && sprite.yCoord < 0xEF {
@@ -209,11 +216,15 @@ func (ppu *Ppu) GetColorAtPixel(x, y uint8) Color {
 			inRangeX := x >= sprite.xCoord && x < sprite.xCoord+8
 			inRangeY := y >= sprite.yCoord && y < sprite.yCoord+8
 			if inRangeX && inRangeY {
-				return ppu.getSpriteColorAtPixel(x - sprite.xCoord, y - sprite.yCoord, sprite)
+				spriteColor := ppu.getSpriteColorAtPixel(x - sprite.xCoord, y - sprite.yCoord, sprite)
+				if spriteColor.A > 0 {
+					return spriteColor
+				} else {
+					return color
+				}
 			}
 		}
 	}
 
-	color = ppu.getBackgroundColorAtPixel(x, y)
 	return color
 }

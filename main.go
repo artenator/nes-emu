@@ -12,7 +12,8 @@ import (
 var imd = imdraw.New(nil)
 
 func drawPixel(c hardware.Color, x, y float64) {
-	imd.Color = pixel.RGB(float64(float64(c.R)/255), float64(float64(c.G)/255), float64(float64(c.B)/255))
+	colorRGBA := pixel.RGB(float64(float64(c.R)/255), float64(float64(c.G)/255), float64(float64(c.B)/255)).Mul(pixel.Alpha(c.A))
+	imd.Color = colorRGBA
 	imd.Push(pixel.V(x+1, y+1))
 	imd.Push(pixel.V(x, y))
 	imd.Rectangle(0)
@@ -25,13 +26,13 @@ func runNES(nes hardware.NES, numOfInstructions *uint) {
 		nes.CPU.RunInstruction(hardware.Instructions[opcode], false)
 
 		//time.Sleep(1 * time.Nanosecond)
-		for wait < 10000 {
+		for wait < 5000 {
 			wait++
 		}
 
 		*numOfInstructions++
 
-		if (nes.CPU.Memory[0x2002]>>7)&1 == 1 && (nes.CPU.Memory[0x2000]>>7)&1 == 1 && *numOfInstructions%1000 == 0 {
+		if (nes.CPU.Memory[0x2002]>>7)&1 == 1 && (nes.CPU.Memory[0x2000]>>7)&1 == 1 && *numOfInstructions%250 == 0 {
 			nes.CPU.HandleNMI()
 		}
 	}
@@ -49,8 +50,6 @@ func run() {
 		panic(err)
 	}
 
-	// create new nes
-	//cpu := hardware.Cpu{}
 	nes := hardware.NewNES()
 
 	cart, err := hardware.CreateCartridge("donkey-kong.nes")
@@ -74,7 +73,7 @@ func run() {
 	for !win.Closed() {
 		imd.Clear()
 
-		if numOfInstructions%200 == 0 {
+		if numOfInstructions%25 == 0 {
 			for y := 0; y < 240; y++ {
 				if y == 1 {
 					nes.PPU.ClearVBlank()
