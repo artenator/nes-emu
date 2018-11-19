@@ -11,7 +11,7 @@ type instruction struct {
 	bytes uint8
 
 	// Num of cycles
-	cycles uint8
+	Cycles uint8
 
 	// Addressing Mode
 	mode uint8

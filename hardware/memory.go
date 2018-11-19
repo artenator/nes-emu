@@ -2,7 +2,6 @@ package hardware
 
 import (
 	"encoding/binary"
-	"log"
 )
 
 func (cpu *Cpu) Read8(addr uint16) uint8 {
@@ -22,10 +21,6 @@ func (cpu *Cpu) Read16(addr uint16) uint16 {
 	if addr < 0x2000 {
 		return binary.LittleEndian.Uint16(cpu.Memory[addr&0x7FF : (uint32(addr)&0x7FF)+2])
 	} else if addr >= 0x2000 && addr < 0x4000 {
-		if addr == 0x2002 {
-			log.Println("status read")
-			cpu.nes.PPU.ClearVBlank()
-		}
 		return binary.LittleEndian.Uint16(cpu.Memory[addr&0x2007 : (uint32(addr)&0x2007)+2])
 	} else {
 		return binary.LittleEndian.Uint16(cpu.Memory[addr : uint32(addr)+2])

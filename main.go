@@ -1,15 +1,19 @@
 package main
 
 import (
+	"github.com/dterei/gotsc"
 	"github.com/faiface/pixel"
 	"github.com/faiface/pixel/imdraw"
 	"github.com/faiface/pixel/pixelgl"
+	"github.com/shirou/gopsutil/cpu"
 	"golang.org/x/image/colornames"
 	"log"
+	"math"
 	"nes-emu/hardware"
 )
 
 var imd = imdraw.New(nil)
+var cpuInfo, _ = cpu.Info()
 
 func drawPixel(c hardware.Color, x, y float64) {
 	colorRGBA := pixel.RGB(float64(float64(c.R)/255), float64(float64(c.G)/255), float64(float64(c.B)/255)).Mul(pixel.Alpha(c.A))
@@ -21,21 +25,26 @@ func drawPixel(c hardware.Color, x, y float64) {
 
 func runNES(nes hardware.NES, numOfInstructions *uint) {
 	for true {
-		wait := 0
+		startTime := gotsc.BenchStart()
+		//wait := 0
 		opcode := nes.CPU.Read8(nes.CPU.PC)
 		nes.CPU.RunInstruction(hardware.Instructions[opcode], false)
 
 		inVBlank := (nes.CPU.Memory[0x2002]>>7)&1 == 1
 		NMIEnabled := (nes.CPU.Memory[0x2000]>>7)&1 == 1
 
-		//time.Sleep(1 * time.Nanosecond)
-		for wait < 4000 {
-			wait++
+
+		endTime := gotsc.BenchEnd()
+		nsRunTime := (float64(endTime - startTime) / (cpuInfo[0].Mhz * math.Pow10(6))) * math.Pow10(9)
+
+		for nsRunTime < hardware.NsPerCycle * float64(hardware.Instructions[opcode].Cycles) {
+			endTime = gotsc.BenchEnd()
+			nsRunTime = (float64(endTime - startTime) / (cpuInfo[0].Mhz * math.Pow10(6))) * math.Pow10(9)
 		}
 
 		*numOfInstructions++
 
-		if inVBlank && NMIEnabled && *numOfInstructions%1500 == 0 {
+		if inVBlank && NMIEnabled && *numOfInstructions%10 == 0 {
 			nes.CPU.HandleNMI()
 		}
 	}

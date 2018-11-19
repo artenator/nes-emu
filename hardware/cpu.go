@@ -2,11 +2,13 @@ package hardware
 
 import (
 	"log"
+	"math"
 	"time"
 )
 
 // cpu speed
 const cpuSpeed = 1789773
+var NsPerCycle = (1 / float64(1789773)) * math.Pow10(9)
 
 type Cpu struct {
 	// pointer to base struct
