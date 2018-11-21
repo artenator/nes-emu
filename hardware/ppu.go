@@ -221,6 +221,7 @@ func (ppu *Ppu) GetColorAtPixel(x, y uint8) Color {
 				if spriteColor.A > 0 {
 					return spriteColor
 				} else {
+					color = ppu.getBackgroundColorAtPixel(x, y)
 					return color
 				}
 			}

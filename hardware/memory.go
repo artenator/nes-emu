@@ -14,6 +14,11 @@ func (cpu *Cpu) Read8(addr uint16) uint8 {
 		}
 		return readValue
 	} else {
+		if addr == 0x4016 {
+			val := (cpu.Controller >> (7 - (cpu.ControllerIdx % 8))) & 1
+			cpu.ControllerIdx++
+			return val
+		}
 		return cpu.Memory[addr]
 	}
 }
@@ -67,6 +72,9 @@ func (cpu *Cpu) Write8(addr uint16, value uint8) {
 			cpu.nes.PPU.SetOamAddr(0)
 			cpu.nes.PPU.oamSpriteAddr = 0
 		} else {
+			if addr == 0x4016 && value == 0 {
+				cpu.ControllerIdx = 0
+			}
 			cpu.Memory[addr] = value
 		}
 
