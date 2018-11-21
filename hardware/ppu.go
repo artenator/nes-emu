@@ -14,6 +14,9 @@ type Ppu struct {
 	oamAddr        uint8
 	oamSpriteAddr  uint8
 	OAM            [0x40]Sprite
+	Cycle		   int64
+	Scanline	   uint16
+	FrameReady	   bool
 }
 
 func (ppu *Ppu) Write8(value uint8) {
@@ -208,8 +211,6 @@ func (ppu *Ppu) getSpriteColorAtPixel(x, y uint8, s Sprite) Color {
 func (ppu *Ppu) GetColorAtPixel(x, y uint8) Color {
 	var color Color
 
-	color = ppu.getBackgroundColorAtPixel(x, y)
-
 	for _, sprite := range ppu.OAM {
 		if sprite.yCoord > 0x00 && sprite.yCoord < 0xEF {
 			// TODO: 8x16 sprites
@@ -226,5 +227,32 @@ func (ppu *Ppu) GetColorAtPixel(x, y uint8) Color {
 		}
 	}
 
+	color = ppu.getBackgroundColorAtPixel(x, y)
+
 	return color
+}
+
+func (ppu *Ppu) PPURun() {
+	if ppu.Scanline == 259 && ppu.Cycle == 340 {
+		ppu.ClearVBlank()
+	}
+	if ppu.Scanline == 241  && ppu.Cycle == 0 {
+		ppu.SetVBlank()
+	}
+
+	ppu.Cycle = (ppu.Cycle + 1) % 341
+	if ppu.Cycle == 340 {
+		ppu.Scanline = (ppu.Scanline + 1) % 260
+	}
+
+	// if a frame is ready, set bool
+	if ppu.Cycle == 0 && ppu.Scanline == 0 {
+		ppu.FrameReady = true
+	}
+}
+
+func (ppu *Ppu) RunPPUCycles(numOfCycles uint16) {
+	for i := uint16(0); i < numOfCycles; i++ {
+		ppu.PPURun()
+	}
 }

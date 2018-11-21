@@ -8,7 +8,11 @@ func (cpu *Cpu) Read8(addr uint16) uint8 {
 	if addr < 0x2000 {
 		return cpu.Memory[addr&0x7FF]
 	} else if addr >= 0x2000 && addr < 0x4000 {
-		return cpu.Memory[addr&0x2007]
+		readValue := cpu.Memory[addr&0x2007]
+		if addr == 0x2002 {
+			cpu.nes.PPU.ClearVBlank()
+		}
+		return readValue
 	} else {
 		return cpu.Memory[addr]
 	}

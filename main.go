@@ -1,53 +1,54 @@
 package main
 
 import (
-	"github.com/dterei/gotsc"
+	"fmt"
 	"github.com/faiface/pixel"
 	"github.com/faiface/pixel/imdraw"
 	"github.com/faiface/pixel/pixelgl"
 	"github.com/shirou/gopsutil/cpu"
 	"golang.org/x/image/colornames"
 	"log"
-	"math"
 	"nes-emu/hardware"
+	"time"
 )
 
 var imd = imdraw.New(nil)
 var cpuInfo, _ = cpu.Info()
 
+type ColorAtPixel struct {
+	color hardware.Color
+	x uint8
+	y uint8
+}
+
 func drawPixel(c hardware.Color, x, y float64) {
-	colorRGBA := pixel.RGB(float64(float64(c.R)/255), float64(float64(c.G)/255), float64(float64(c.B)/255)).Mul(pixel.Alpha(c.A))
+	colorRGBA := pixel.RGB(float64(c.R)/255, float64(c.G)/255, float64(c.B)/255)
 	imd.Color = colorRGBA
 	imd.Push(pixel.V(x+1, y+1))
 	imd.Push(pixel.V(x, y))
 	imd.Rectangle(0)
 }
 
-func runNES(nes hardware.NES, numOfInstructions *uint) {
-	for true {
-		startTime := gotsc.BenchStart()
+func runNEStoFrame(nes hardware.NES, numOfInstructions *uint) {
+	for !nes.PPU.FrameReady {
 		//wait := 0
 		opcode := nes.CPU.Read8(nes.CPU.PC)
-		nes.CPU.RunInstruction(hardware.Instructions[opcode], false)
+		instr := hardware.Instructions[opcode]
+		nes.CPU.RunInstruction(instr, false)
+		nes.PPU.RunPPUCycles(uint16(3 * instr.Cycles))
 
 		inVBlank := (nes.CPU.Memory[0x2002]>>7)&1 == 1
 		NMIEnabled := (nes.CPU.Memory[0x2000]>>7)&1 == 1
 
-
-		endTime := gotsc.BenchEnd()
-		nsRunTime := (float64(endTime - startTime) / (cpuInfo[0].Mhz * math.Pow10(6))) * math.Pow10(9)
-
-		for nsRunTime < hardware.NsPerCycle * float64(hardware.Instructions[opcode].Cycles) {
-			endTime = gotsc.BenchEnd()
-			nsRunTime = (float64(endTime - startTime) / (cpuInfo[0].Mhz * math.Pow10(6))) * math.Pow10(9)
-		}
-
 		*numOfInstructions++
 
-		if inVBlank && NMIEnabled && *numOfInstructions%10 == 0 {
+		if inVBlank && NMIEnabled {
+			nes.PPU.ClearVBlank()
 			nes.CPU.HandleNMI()
 		}
 	}
+
+	nes.PPU.FrameReady = false
 }
 
 func run() {
@@ -70,41 +71,38 @@ func run() {
 		log.Println(err)
 	} else {
 		nes.LoadCartridge(cart)
-		//log.Println(cart)
-		//log.Println(cpu.Memory)
-
 		nes.CPU.Reset()
 	}
 
 	var numOfInstructions uint = 0
-
-	// Run
-	go runNES(nes, &numOfInstructions)
+	var (
+		frames = 0
+		second = time.Tick(time.Second)
+	)
 
 	// main drawing loop
 	for !win.Closed() {
+		runNEStoFrame(nes, &numOfInstructions)
 		imd.Clear()
 
-		if numOfInstructions%25 == 0 {
-			for y := 0; y < 240; y++ {
-				if y == 1 {
-					nes.PPU.ClearVBlank()
-				}
-				if y == 200 {
-					nes.PPU.SetVBlank()
-				}
-				for x := 0; x < 256; x++ {
-					drawPixel(nes.PPU.GetColorAtPixel(uint8(x), uint8(y)), float64(x), float64(239-y))
-				}
+		for y := 0; y < 240; y++ {
+			for x := 0; x < 256; x++ {
+				c := nes.PPU.GetColorAtPixel(uint8(x), uint8(y))
+				drawPixel(c, float64(x), float64(239 - y))
 			}
-
-			win.Clear(colornames.Black)
-			imd.Draw(win)
-			win.Update()
-		} else {
-			win.Update()
 		}
 
+		win.Clear(colornames.Black)
+		imd.Draw(win)
+		win.Update()
+
+		frames++
+		select {
+		case <-second:
+			win.SetTitle(fmt.Sprintf("%s | FPS: %d", cfg.Title, frames))
+			frames = 0
+		default:
+		}
 	}
 }
 
