@@ -7,11 +7,11 @@ import (
 	"github.com/faiface/pixel/pixelgl"
 	"github.com/shirou/gopsutil/cpu"
 	"golang.org/x/image/colornames"
-	"image"
-	"image/color"
 	"log"
 	"nes-emu/hardware"
+	"os"
 	"time"
+	"errors"
 )
 
 var imd = imdraw.New(nil)
@@ -63,12 +63,19 @@ func runNEStoFrame(nes hardware.NES, numOfInstructions *uint) {
 }
 
 func run() {
-	// all of our code will be fired up from here
 	cfg := pixelgl.WindowConfig{
 		Title:  "Arte's NES Emulator",
 		Bounds: pixel.R(0, 0, 256, 240),
 		VSync:  false,
 	}
+
+	var gameName string
+	if len(os.Args) > 1 {
+		gameName = os.Args[1]
+	} else {
+		panic(errors.New("Please pass in a game name."))
+	}
+
 	win, err := pixelgl.NewWindow(cfg)
 	if err != nil {
 		panic(err)
@@ -76,7 +83,7 @@ func run() {
 
 	nes := hardware.NewNES()
 
-	cart, err := hardware.CreateCartridge("balloon-fight.nes")
+	cart, err := hardware.CreateCartridge(gameName)
 
 	if err != nil {
 		log.Println(err)
@@ -94,80 +101,27 @@ func run() {
 
 	// main drawing loop
 	for !win.Closed() {
-		var img *image.RGBA = image.NewRGBA(image.Rect(0, 0, 256, 240))
+		imd.Clear()
 
-		if win.Pressed(pixelgl.KeyZ) {
-			nes.CPU.Joy1PressButtonA()
-		} else {
-			nes.CPU.Joy1ReleaseButtonA()
-		}
-
-		if win.Pressed(pixelgl.KeyX) {
-			nes.CPU.Joy1PressButtonB()
-		} else {
-			nes.CPU.Joy1ReleaseButtonB()
-		}
-
-		if win.Pressed(pixelgl.KeyRightShift) {
-			nes.CPU.Joy1PressButtonSelect()
-		} else {
-			nes.CPU.Joy1ReleaseButtonSelect()
-		}
-
-		if win.Pressed(pixelgl.KeyS) {
-			nes.CPU.Joy1PressButtonStart()
-		} else {
-			nes.CPU.Joy1ReleaseButtonStart()
-		}
-
-		if win.Pressed(pixelgl.KeyUp) {
-			nes.CPU.Joy1PressButtonUp()
-		} else {
-			nes.CPU.Joy1ReleaseButtonUp()
-		}
-
-		if win.Pressed(pixelgl.KeyDown) {
-			nes.CPU.Joy1PressButtonDown()
-		} else {
-			nes.CPU.Joy1ReleaseButtonDown()
-		}
-
-		if win.Pressed(pixelgl.KeyLeft) {
-			nes.CPU.Joy1PressButtonLeft()
-		} else {
-			nes.CPU.Joy1ReleaseButtonLeft()
-		}
-
-		if win.Pressed(pixelgl.KeyRight) {
-			nes.CPU.Joy1PressButtonRight()
-		} else {
-			nes.CPU.Joy1ReleaseButtonRight()
-		}
+		nes.CPU.CheckControllerPresses(win)
 
 		runNEStoFrame(nes, &numOfInstructions)
 
-
-
-		imd.Clear()
-
-		for y := 0; y < 240; y++ {
-			for x := 0; x < 256; x++ {
-				c := nes.PPU.GetColorAtPixel(uint8(x), uint8(y))
-				img.SetRGBA(x, y, color.RGBA{c.R, c.G, c.B, uint8(c.A)})
-				//drawPixel(c, float64(x), float64(239 - y))
-			}
-		}
+		img := nes.PPU.GenerateFrame()
 
 		pic := pixel.PictureDataFromImage(img)
+
 		sprite := pixel.NewSprite(pic, pic.Bounds())
 
 		win.Clear(colornames.Black)
-		//imd.Draw(win)
+
 		sprite.Draw(win, pixel.IM.Moved(win.Bounds().Center()))
+
 		win.Update()
 
 		<-us
 		frames++
+
 		select {
 		case <-second:
 			win.SetTitle(fmt.Sprintf("FPS: %d %s", frames, cfg.Title))

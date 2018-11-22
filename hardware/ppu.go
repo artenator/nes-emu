@@ -2,6 +2,8 @@ package hardware
 
 import (
 	"encoding/binary"
+	"image"
+	"image/color"
 )
 
 type Ppu struct {
@@ -256,4 +258,17 @@ func (ppu *Ppu) RunPPUCycles(numOfCycles uint16) {
 	for i := uint16(0); i < numOfCycles; i++ {
 		ppu.PPURun()
 	}
+}
+
+func (ppu *Ppu) GenerateFrame() *image.RGBA {
+	var img *image.RGBA = image.NewRGBA(image.Rect(0, 0, 256, 240))
+
+	for y := 0; y < 240; y++ {
+		for x := 0; x < 256; x++ {
+			c := ppu.GetColorAtPixel(uint8(x), uint8(y))
+			img.SetRGBA(x, y, color.RGBA{c.R, c.G, c.B, uint8(c.A)})
+		}
+	}
+
+	return img
 }

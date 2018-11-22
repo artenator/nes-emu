@@ -64,8 +64,9 @@ func (cpu *Cpu) Write8(addr uint16, value uint8) {
 
 		}
 	} else {
-		// OAMDATA
+		// OAMDMA at 0x4014 write
 		if addr == 0x4014 {
+			// write all the sprites to oam
 			for _, b := range cpu.Memory[0x200:0x300] {
 				cpu.nes.PPU.WriteOAM8(b)
 			}

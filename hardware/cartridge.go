@@ -56,14 +56,14 @@ func CreateCartridge(filename string) (Cartridge, error) {
 
 		// Make sure this is an NES rom
 		if string(c.nesLabel[:]) == "NES" + string(0x1a) {
-                        c.prgRomBlocks = rom[4]
+			c.prgRomBlocks = rom[4]
 			c.chrRomBlocks = rom[5]
 			c.flags6 = rom[6]
 			c.flags7 = rom[7]
 			c.prgRamBlocks = rom[8]
 			c.flags9 = rom[9]
 			c.flags10 = rom[10]
-                        copy(c.zeroBuffer[:], rom[11:15])
+			copy(c.zeroBuffer[:], rom[11:15])
 
 			// load chr and prg rom data
 			c.prgRom = romNoHeader[0:0x4000 * uint(c.prgRomBlocks)]
