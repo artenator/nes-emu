@@ -165,7 +165,9 @@ func (ppu *Ppu) getSpriteColorPalette(pos uint8) [4]Color {
 func (ppu *Ppu) getBackgroundColorAtPixel(x, y uint8) Color {
 	backgroundTileBase := uint16((ppu.nes.CPU.Memory[0x2000]>>4)&1) * 0x1000
 	backgroundTileOffset := (uint16(y/8) * 32) + (uint16(x/8) % 32)
-	backgroundTilePos := ppu.Memory[0x2000+backgroundTileOffset]
+	nameTableSelect := ppu.nes.CPU.Memory[0x2000] & 0x03
+	nameTableBase := 0x2000 + uint16(uint16(nameTableSelect) * 0x400)
+	backgroundTilePos := ppu.Memory[nameTableBase+backgroundTileOffset]
 
 	backgroundTile := ppu.get8x8Tile(backgroundTileBase, uint16(backgroundTilePos))
 	xBG := x % 8
