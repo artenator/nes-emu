@@ -1,6 +1,7 @@
 package main
 
 import (
+	"errors"
 	"fmt"
 	"github.com/faiface/pixel"
 	"github.com/faiface/pixel/imdraw"
@@ -11,7 +12,6 @@ import (
 	"nes-emu/hardware"
 	"os"
 	"time"
-	"errors"
 )
 
 var imd = imdraw.New(nil)
@@ -105,11 +105,11 @@ func run() {
 
 		nes.CPU.CheckControllerPresses(win)
 
+
 		runNEStoFrame(nes, &numOfInstructions)
 
-		img := nes.PPU.GenerateFrame()
 
-		pic := pixel.PictureDataFromImage(img)
+		pic := pixel.PictureDataFromImage(nes.PPU.Frame)
 
 		sprite := pixel.NewSprite(pic, pic.Bounds())
 

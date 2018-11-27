@@ -18,6 +18,7 @@ type Ppu struct {
 	OAM            [0x40]Sprite
 	Cycle		   int64
 	Scanline	   uint16
+	Frame		   *image.RGBA
 	FrameReady	   bool
 }
 
@@ -238,6 +239,15 @@ func (ppu *Ppu) GetColorAtPixel(x, y uint8) Color {
 }
 
 func (ppu *Ppu) PPURun() {
+
+	if ppu.Cycle == 340 && ppu.Scanline < 240 {
+		for x := 0; x < 256; x++ {
+			sl := ppu.Scanline
+			c := ppu.GetColorAtPixel(uint8(x), uint8(sl))
+			ppu.Frame.SetRGBA(x, int(sl), color.RGBA{c.R, c.G, c.B, uint8(c.A)})
+		}
+	}
+
 	if ppu.Scanline == 259 && ppu.Cycle == 340 {
 		ppu.ClearVBlank()
 	}
