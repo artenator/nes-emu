@@ -95,7 +95,7 @@ func run() {
 	var (
 		numOfInstructions uint = 0
 		frames = 0
-		us = time.Tick(16666 * time.Microsecond)
+		//us = time.Tick(16666 * time.Microsecond)
 		second = time.Tick(time.Second)
 	)
 
@@ -105,9 +105,7 @@ func run() {
 
 		nes.CPU.CheckControllerPresses(win)
 
-
 		runNEStoFrame(nes, &numOfInstructions)
-
 
 		pic := pixel.PictureDataFromImage(nes.PPU.Frame)
 
@@ -119,7 +117,7 @@ func run() {
 
 		win.Update()
 
-		<-us
+		//<-us
 		frames++
 
 		select {
