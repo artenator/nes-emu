@@ -26,8 +26,6 @@ func (ppu *Ppu) Write8(value uint8) {
 	ppuAddressArr := []uint8{ppu.ppuAddrMSB, ppu.ppuAddrLSB}
 	ppuWriteAddress := binary.BigEndian.Uint16(ppuAddressArr)
 
-	//log.Printf("Write to ppu ram at address %x, base: %x, offset: %x, value: %x", ppuWriteAddress + ppu.ppuAddrOffset, ppuWriteAddress, ppu.ppuAddrOffset, value)
-
 	ppu.Memory[ppuWriteAddress+ppu.ppuAddrOffset] = value
 
 	if (ppu.nes.CPU.Memory[0x2000]>>2)&1 == 1 {

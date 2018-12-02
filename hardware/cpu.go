@@ -90,6 +90,9 @@ func (cpu *Cpu) Reset() {
 
 	cpu.setCpuInitialState()
 
+	// initialize the apu
+	cpu.nes.APU.InitAPU()
+
 	//cpu.runMainCpuLoop()
 
 	// print the whole CPU and memory!!

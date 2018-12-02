@@ -72,10 +72,17 @@ func (cpu *Cpu) Write8(addr uint16, value uint8) {
 			}
 			cpu.nes.PPU.SetOamAddr(0)
 			cpu.nes.PPU.oamSpriteAddr = 0
-		} else {
-			if addr == 0x4016 && value == 0 {
+		} else if addr == 0x4015 {
+			cpu.nes.APU.enablePulseChannel1 = (value >> 0) & 1 == 1
+			cpu.nes.APU.enablePulseChannel2 = (value >> 1) & 1 == 1
+			cpu.Memory[addr] = value
+		} else if addr == 0x4016 {
+			if value == 0 {
 				cpu.ControllerIdx = 0
 			}
+			cpu.Memory[addr] = value
+		} else {
+
 			cpu.Memory[addr] = value
 		}
 

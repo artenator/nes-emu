@@ -36,6 +36,7 @@ func runNESInstruction(nes hardware.NES, numOfInstructions *uint) {
 	instr := hardware.Instructions[opcode]
 	nes.CPU.RunInstruction(instr, false)
 	nes.PPU.RunPPUCycles(uint16(3 * instr.Cycles))
+	nes.APU.RunAPUCycles(uint16(instr.Cycles))
 
 	inVBlank := (nes.CPU.Memory[0x2002]>>7)&1 == 1
 	NMIEnabled := (nes.CPU.Memory[0x2000]>>7)&1 == 1
@@ -58,6 +59,9 @@ func runNEStoFrame(nes hardware.NES, numOfInstructions *uint) {
 	for !nes.PPU.FrameReady {
 		runNESInstruction(nes, numOfInstructions)
 	}
+
+	//log.Printf("%+v", nes.APU.GetPulseFrequency(0x4000))
+	//log.Printf("%+v", nes.APU.GetPulseFrequency(0x4004))
 
 	nes.PPU.FrameReady = false
 }
