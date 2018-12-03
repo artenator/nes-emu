@@ -2,6 +2,7 @@ package hardware
 
 import (
 	"github.com/hajimehoshi/oto"
+	"time"
 )
 
 type Apu struct {
@@ -29,9 +30,11 @@ type Apu struct {
 	pulse1 Pulse
 	pulse2 Pulse
 
+	soundOut float64
+
 	// lookup tables
-	pulseTable [31]float32
-	tndTable [203]float32
+	pulseTable [31]float64
+	tndTable [203]float64
 }
 
 type Pulse struct {
@@ -81,12 +84,12 @@ func (apu *Apu) GetPulseFrequency(baseAddr uint16) int {
 //square_table [n] = 95.52 / (8128.0 / n + 100)
 func (apu *Apu) populatePulseTable() {
 	for i := 0; i < 31; i++ {
-		apu.pulseTable[i] = 95.52 / (8128.0 / float32(i) + 100)
+		apu.pulseTable[i] = 95.52 / (8128.0 / float64(i) + 100)
 	}
 }
 
 //square_out = square_table [square1 + square2]
-func (apu *Apu) pulseOut(s1, s2 uint8) float32 {
+func (apu *Apu) pulseOut(s1, s2 uint8) float64 {
 	//apu.pulseTable[]
 	return apu.pulseTable[s1 + s2]
 }
@@ -94,17 +97,17 @@ func (apu *Apu) pulseOut(s1, s2 uint8) float32 {
 //tnd_table [n] = 163.67 / (24329.0 / n + 100)
 func (apu *Apu) populateTNDTable() {
 	for i := 0; i < 203; i++ {
-		apu.tndTable[i] = 163.67 / (24329.0 / float32(i) + 100)
+		apu.tndTable[i] = 163.67 / (24329.0 / float64(i) + 100)
 	}
 }
 
 //tnd_out = tnd_table [3 * triangle + 2 * noise + dmc]
-func (apu *Apu) tndOut(t, n, d uint8) float32 {
+func (apu *Apu) tndOut(t, n, d uint8) float64 {
 	//apu.pulseTable[]
 	return apu.tndTable[3 * t + 2 * n + d]
 }
 
-func (apu *Apu) out(s1, s2, t, n, d uint8) float32 {
+func (apu *Apu) out(s1, s2, t, n, d uint8) float64 {
 	return apu.pulseOut(s1, s2) + apu.tndOut(t, n, d)
 }
 
@@ -144,7 +147,7 @@ func (pulse *Pulse) pulseRun() uint8 {
 	return pulse.out()
 }
 
-func (apu *Apu) APURun() float32 {
+func (apu *Apu) APURun() float64 {
 	var p1out, p2out uint8
 
 	if apu.enablePulseChannel1 {
@@ -164,24 +167,33 @@ func (apu *Apu) APURun() float32 {
 	return soundOut
 }
 
+func (apu *Apu) PlaySoundTicker() {
+	ms := time.Tick(time.Second / 44100)
+
+	for true {
+		b := []byte{byte(apu.soundOut * 0xFF)}
+		apu.audioDevice.Write(b)
+		//log.Printf("%d", time.Second / 44100)
+
+		<-ms
+	}
+}
+
 func (apu *Apu) RunAPUCycles(numOfCycles uint16) {
 	//b := make([]byte, numOfCycles)
-	var b []byte
+	//var b []byte
+
 	for i := uint16(0); i < numOfCycles; i++ {
 		//binary.LittleEndian.PutUint16(b, uint16(apu.APURun() * 0xFFFF))
 		//binary.BigEndian.PutUint16(b, uint16(apu.APURun() * 0xFFFF))
 		//log.Printf("%x", b)
-		b = append(b, byte(apu.APURun() * 0xFF))
 		apu.cyclesPast++
-		if apu.cyclesPast >= apu.cycleLimit {
-
-			if apu.cycleLimit == 40 {
-				apu.cycleLimit = 41
-			} else {
-				apu.cycleLimit = 40
+		if apu.cyclesPast % 2 == 0 {
+			apu.soundOut = apu.APURun()
+			if apu.cyclesPast >= apu.cycleLimit {
+				apu.cyclesPast = 0
+				apu.audioDevice.Write([]byte{byte(apu.soundOut * 0xFF)})
 			}
-			apu.cyclesPast = 0
-			apu.audioDevice.Write(b[len(b) - 1:])
 		}
 	}
 }

@@ -26,7 +26,7 @@ func NewNES() NES {
 	// init audio player
 	newNes.APU.cycleLimit = 40
 	var err error
-	if newNes.APU.audioDevice, err = oto.NewPlayer(44100, 1, 2, 735); err != nil {
+	if newNes.APU.audioDevice, err = oto.NewPlayer(44100, 1, 1, 4096); err != nil {
 		log.Fatal("Audio could not be initialized")
 	}
 
