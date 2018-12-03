@@ -2,7 +2,6 @@ package hardware
 
 import (
 	"github.com/hajimehoshi/oto"
-	"time"
 )
 
 type Apu struct {
@@ -165,18 +164,6 @@ func (apu *Apu) APURun() float64 {
 	soundOut := apu.out(p1out, p2out, 0, 0, 0)
 
 	return soundOut
-}
-
-func (apu *Apu) PlaySoundTicker() {
-	ms := time.Tick(time.Second / 44100)
-
-	for true {
-		b := []byte{byte(apu.soundOut * 0xFF)}
-		apu.audioDevice.Write(b)
-		//log.Printf("%d", time.Second / 44100)
-
-		<-ms
-	}
 }
 
 func (apu *Apu) RunAPUCycles(numOfCycles uint16) {
