@@ -1,7 +1,18 @@
 package hardware
 
+import (
+	"github.com/hajimehoshi/oto"
+)
+
 type Apu struct {
 	nes *NES
+
+	//audio device
+	audioDevice *oto.Player
+
+	//cycle counter
+	cyclesPast uint8
+	cycleLimit uint8
 
 	// Status 0x4015
 	enableDMC bool
@@ -29,6 +40,8 @@ type Pulse struct {
 	curTimer uint16
 	curDutyIdx uint8
 }
+
+var SampleRate = 48000
 
 var dutyCycles = [4][8]uint8{
 	{0, 1, 0, 0, 0, 0, 0, 0},
@@ -139,7 +152,7 @@ func (apu *Apu) APURun() float32 {
 	} else {
 		p1out = 0
 	}
-	
+
 	if apu.enablePulseChannel2 {
 		p2out = apu.pulse2.pulseRun()
 	} else {
@@ -152,7 +165,23 @@ func (apu *Apu) APURun() float32 {
 }
 
 func (apu *Apu) RunAPUCycles(numOfCycles uint16) {
+	//b := make([]byte, numOfCycles)
+	var b []byte
 	for i := uint16(0); i < numOfCycles; i++ {
-		apu.APURun()
+		//binary.LittleEndian.PutUint16(b, uint16(apu.APURun() * 0xFFFF))
+		//binary.BigEndian.PutUint16(b, uint16(apu.APURun() * 0xFFFF))
+		//log.Printf("%x", b)
+		b = append(b, byte(apu.APURun() * 0xFF))
+		apu.cyclesPast++
+		if apu.cyclesPast >= apu.cycleLimit {
+
+			if apu.cycleLimit == 40 {
+				apu.cycleLimit = 41
+			} else {
+				apu.cycleLimit = 40
+			}
+			apu.cyclesPast = 0
+			apu.audioDevice.Write(b[len(b) - 1:])
+		}
 	}
 }

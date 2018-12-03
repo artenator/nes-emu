@@ -1,6 +1,10 @@
 package hardware
 
-import "image"
+import (
+	"github.com/hajimehoshi/oto"
+	"image"
+	"log"
+)
 
 type NES struct {
 	CPU *Cpu
@@ -18,6 +22,13 @@ func NewNES() NES {
 	newNes.PPU.nes = &newNes
 	newNes.APU.nes = &newNes
 	newNes.PPU.ppuAddrCounter = 0
+
+	// init audio player
+	newNes.APU.cycleLimit = 40
+	var err error
+	if newNes.APU.audioDevice, err = oto.NewPlayer(44100, 1, 2, 735); err != nil {
+		log.Fatal("Audio could not be initialized")
+	}
 
 	return newNes
 }
