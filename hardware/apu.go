@@ -7,10 +7,10 @@ import (
 type Apu struct {
 	nes *NES
 
-	//audio device
+	// audio device
 	audioDevice *oto.Player
 
-	//cycle counter
+	// cycle counter
 	cyclesPast uint8
 	Cyclelimit uint8
 
@@ -25,9 +25,17 @@ type Apu struct {
 	pulse1Addr uint16
 	pulse2Addr uint16
 
-	//pulse structs
+	// pulse structs
 	pulse1 Pulse
 	pulse2 Pulse
+
+	// sweep base addrs
+	sweep1Addr uint16
+	sweep2Addr uint16
+
+	// sweep structs
+	sweep1 Sweep
+	sweep2 Sweep
 
 	soundOut float64
 
@@ -41,6 +49,23 @@ type Pulse struct {
 	baseAddr uint16
 	curTimer uint16
 	curDutyIdx uint8
+}
+
+type Sweep struct {
+	pulse *Pulse
+	baseAddr uint16
+
+	// bit 7
+	enabled bool
+
+	// bits 6 5 4
+	period uint8
+
+	// bit 3
+	negate bool
+
+	// bit 2 1 0
+	shiftCounter uint8
 }
 
 var SampleRate = 48000
@@ -65,8 +90,25 @@ func (apu *Apu) InitAPU() {
 	apu.pulse1 = Pulse{apu, apu.pulse1Addr, 0, 0,}
 	apu.pulse2 = Pulse{apu,apu.pulse2Addr, 0, 0}
 
+	apu.sweep1Addr = 0x4001
+	apu.sweep2Addr = 0x4005
+
+	apu.sweep1 = Sweep{&apu.pulse1, apu.sweep1Addr, false, 0, false, 0}
+	apu.sweep2 = Sweep{&apu.pulse2, apu.sweep2Addr, false, 0, false, 0}
+
 	apu.populatePulseTable()
 	apu.populateTNDTable()
+}
+
+func (sweep *Sweep) setSweepValues(sweepValue uint8) {
+	sweepEnable := (sweepValue >> 7) & 0x01
+	sweepPeriod := (sweepValue >> 4) & 0x07
+	sweepNegate := (sweepValue >> 3) & 0x01
+	sweepShift := sweepValue & 0x07
+	sweep.enabled = sweepEnable != 0
+	sweep.period = sweepPeriod
+	sweep.negate = sweepNegate != 0
+	sweep.shiftCounter = sweepShift
 }
 
 func (apu *Apu) getPulseTimer(baseAddr uint16) uint16{
