@@ -3,7 +3,6 @@ package hardware
 import (
 	"log"
 	"math"
-	"time"
 )
 
 // cpu speed
@@ -54,32 +53,6 @@ func (cpu *Cpu) setCpuInitialState() {
 	cpu.SP = 0xFD
 }
 
-func (cpu *Cpu) runMainCpuLoop() {
-	// number of instructions ran
-	var numOfInstructions uint = 0
-
-	for true {
-		opcode := cpu.Read8(cpu.PC)
-		cpu.RunInstruction(Instructions[opcode], false)
-
-		time.Sleep(500 * time.Nanosecond)
-
-		numOfInstructions++
-
-		if numOfInstructions % 100 == 0 {
-			if (cpu.Memory[0x2002] >> 7) & 1 == 0 {
-				cpu.nes.PPU.SetVBlank()
-			} else {
-				cpu.nes.PPU.ClearVBlank()
-			}
-		}
-
-		if numOfInstructions % 50000 == 0 {
-			//log.Printf("%+v", cpu.nes.PPU.Memory[0x2000:0x2400])
-		}
-	}
-}
-
 func (cpu *Cpu) Reset() {
 	// Read first instruction address location
 	firstInstruction := cpu.Read16(0xFFFC)
@@ -92,8 +65,6 @@ func (cpu *Cpu) Reset() {
 
 	// initialize the apu
 	cpu.nes.APU.InitAPU()
-
-	//cpu.runMainCpuLoop()
 
 	// print the whole CPU and memory!!
 	log.Printf("%+v\n", cpu)

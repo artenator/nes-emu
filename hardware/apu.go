@@ -12,7 +12,7 @@ type Apu struct {
 
 	//cycle counter
 	cyclesPast uint8
-	cycleLimit uint8
+	Cyclelimit uint8
 
 	// Status 0x4015
 	enableDMC bool
@@ -102,7 +102,6 @@ func (apu *Apu) populateTNDTable() {
 
 //tnd_out = tnd_table [3 * triangle + 2 * noise + dmc]
 func (apu *Apu) tndOut(t, n, d uint8) float64 {
-	//apu.pulseTable[]
 	return apu.tndTable[3 * t + 2 * n + d]
 }
 
@@ -177,7 +176,7 @@ func (apu *Apu) RunAPUCycles(numOfCycles uint16) {
 		apu.cyclesPast++
 		if apu.cyclesPast % 2 == 0 {
 			apu.soundOut = apu.APURun()
-			if apu.cyclesPast >= apu.cycleLimit {
+			if apu.cyclesPast >= apu.Cyclelimit {
 				apu.cyclesPast = 0
 				apu.audioDevice.Write([]byte{byte(apu.soundOut * 0xFF)})
 			}

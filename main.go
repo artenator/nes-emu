@@ -50,12 +50,6 @@ func runNESInstruction(nes hardware.NES, numOfInstructions *uint) {
 	}
 }
 
-func runNESTurbo(nes hardware.NES, numOfInstructions *uint) {
-	for true {
-		runNESInstruction(nes, numOfInstructions)
-	}
-}
-
 func runNEStoFrame(nes hardware.NES, numOfInstructions *uint) {
 	for !nes.PPU.FrameReady {
 		runNESInstruction(nes, numOfInstructions)
@@ -128,6 +122,7 @@ func run() {
 		select {
 		case <-second:
 			win.SetTitle(fmt.Sprintf("FPS: %d %s", frames, cfg.Title))
+			nes.APU.Cyclelimit = uint8(29829 * frames / 44100)
 			frames = 0
 		default:
 		}

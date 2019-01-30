@@ -2,6 +2,7 @@ package hardware
 
 import (
 	"encoding/binary"
+	"log"
 )
 
 func (cpu *Cpu) Read8(addr uint16) uint8 {
@@ -65,7 +66,9 @@ func (cpu *Cpu) Write8(addr uint16, value uint8) {
 		}
 	} else {
 		// OAMDMA at 0x4014 write
-		if addr == 0x4014 {
+		if addr == 0x4001 {
+			log.Printf("wrote %+v to 0x4001", value)
+		} else if addr == 0x4014 {
 			// write all the sprites to oam
 			for _, b := range cpu.Memory[0x200:0x300] {
 				cpu.nes.PPU.WriteOAM8(b)
