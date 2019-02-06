@@ -85,6 +85,8 @@ func (cpu *Cpu) Write8(addr uint16, value uint8) {
 				cpu.ControllerIdx = 0
 			}
 			cpu.Memory[addr] = value
+		} else if addr == 0x4017 {
+			cpu.nes.APU.setFrameCounterValues(value)
 		} else {
 
 			cpu.Memory[addr] = value

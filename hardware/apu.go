@@ -21,6 +21,12 @@ type Apu struct {
 	enablePulseChannel1 bool
 	enablePulseChannel2 bool
 
+	// Frame Counter 0x4017
+	sequenceClockCounter uint8
+	sequencerMode uint8
+	sequenceInterrupt bool
+	sequenceCounter uint32
+
 	// pulse base addrs
 	pulse1Addr uint16
 	pulse2Addr uint16
@@ -66,6 +72,10 @@ type Sweep struct {
 
 	// bit 2 1 0
 	shiftCounter uint8
+
+	reload bool
+
+	counter uint8
 }
 
 var SampleRate = 48000
@@ -93,11 +103,20 @@ func (apu *Apu) InitAPU() {
 	apu.sweep1Addr = 0x4001
 	apu.sweep2Addr = 0x4005
 
-	apu.sweep1 = Sweep{&apu.pulse1, apu.sweep1Addr, false, 0, false, 0}
-	apu.sweep2 = Sweep{&apu.pulse2, apu.sweep2Addr, false, 0, false, 0}
+	apu.sweep1 = Sweep{&apu.pulse1, apu.sweep1Addr,  false, 0, false, 0, false, 0}
+	apu.sweep2 = Sweep{&apu.pulse2, apu.sweep2Addr,  false, 0, false, 0, false, 0}
 
 	apu.populatePulseTable()
 	apu.populateTNDTable()
+}
+
+func (apu *Apu) setFrameCounterValues(frameCounterValue uint8) {
+	apu.sequencerMode = (frameCounterValue >> 7) & 0x01
+	apu.sequenceInterrupt = ((frameCounterValue >> 6) & 0x01) != 0
+	apu.sequenceCounter = 7475
+
+	apu.sweep1.sweepRun()
+	apu.sweep2.sweepRun()
 }
 
 func (sweep *Sweep) setSweepValues(sweepValue uint8) {
@@ -109,6 +128,25 @@ func (sweep *Sweep) setSweepValues(sweepValue uint8) {
 	sweep.period = sweepPeriod
 	sweep.negate = sweepNegate != 0
 	sweep.shiftCounter = sweepShift
+	sweep.reload = true
+}
+
+func (sweep *Sweep) sweepRun() {
+	if sweep.reload {
+		sweep.counter = sweep.period
+		sweep.reload = false
+	} else if sweep.counter > 0 {
+		sweep.counter--
+	} else {
+		sweep.counter = sweep.period
+		if (sweep.enabled) {
+			if (sweep.negate) {
+				sweep.pulse.curTimer -= (sweep.pulse.curTimer >> sweep.shiftCounter)
+			} else {
+				sweep.pulse.curTimer += (sweep.pulse.curTimer >> sweep.shiftCounter)
+			}
+		}
+	}
 }
 
 func (apu *Apu) getPulseTimer(baseAddr uint16) uint16{
@@ -177,7 +215,7 @@ func (pulse *Pulse) getPulTimer() uint16{
 }
 
 func (pulse *Pulse) pulseRun() uint8 {
-	if pulse.curTimer == 0 {
+	if pulse.curTimer <= 0 {
 		pulse.curTimer = pulse.getPulTimer()
 		pulse.curDutyIdx = (pulse.curDutyIdx + 1) % 8
 	} else {
@@ -207,7 +245,45 @@ func (apu *Apu) APURun() float64 {
 	return soundOut
 }
 
-func (apu *Apu) RunAPUCycles(numOfCycles uint16) {
+func (apu *Apu) sequenceClockCounterRun() {
+	if apu.sequenceCounter > 0 {
+		apu.sequenceCounter--
+	} else {
+		switch apu.sequencerMode {
+		case 1:
+			switch apu.sequenceClockCounter {
+			case 0:
+			case 1:
+				apu.sweep1.sweepRun()
+				apu.sweep2.sweepRun()
+			case 2:
+			case 3:
+			case 4:
+				apu.sweep1.sweepRun()
+				apu.sweep2.sweepRun()
+			default:
+			}
+			apu.sequenceClockCounter = (apu.sequenceClockCounter + 1) % 5
+		case 0:
+			switch apu.sequenceClockCounter {
+			case 0:
+			case 1:
+				apu.sweep1.sweepRun()
+				apu.sweep2.sweepRun()
+			case 2:
+			case 3:
+				apu.sweep1.sweepRun()
+				apu.sweep2.sweepRun()
+			default:
+			}
+			apu.sequenceClockCounter = (apu.sequenceClockCounter + 1) % 4
+		}
+
+
+	}
+}
+
+func (apu *Apu) RunAPUCycles(numOfCycles uint16, lastFPS int) {
 	//b := make([]byte, numOfCycles)
 	//var b []byte
 
@@ -215,8 +291,13 @@ func (apu *Apu) RunAPUCycles(numOfCycles uint16) {
 		//binary.LittleEndian.PutUint16(b, uint16(apu.APURun() * 0xFFFF))
 		//binary.BigEndian.PutUint16(b, uint16(apu.APURun() * 0xFFFF))
 		//log.Printf("%x", b)
+
 		apu.cyclesPast++
+
+		apu.sequenceClockCounterRun()
+
 		if apu.cyclesPast % 2 == 0 {
+
 			apu.soundOut = apu.APURun()
 			if apu.cyclesPast >= apu.Cyclelimit {
 				apu.cyclesPast = 0

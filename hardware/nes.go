@@ -24,7 +24,7 @@ func NewNES() NES {
 	newNes.PPU.ppuAddrCounter = 0
 
 	// init audio player
-	newNes.APU.Cyclelimit = 80
+	newNes.APU.Cyclelimit = 40
 	var err error
 	if newNes.APU.audioDevice, err = oto.NewPlayer(44100, 1, 1, 4096); err != nil {
 		log.Fatal("Audio could not be initialized")

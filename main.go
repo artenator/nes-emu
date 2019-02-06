@@ -32,12 +32,12 @@ func drawPixel(c hardware.Color, x, y float64) {
 	imd.Rectangle(0)
 }
 
-func runNESInstruction(nes hardware.NES, numOfInstructions *uint) {
+func runNESInstruction(nes hardware.NES, numOfInstructions *uint, lastFPS int) {
 	opcode := nes.CPU.Read8(nes.CPU.PC)
 	instr := hardware.Instructions[opcode]
 	nes.CPU.RunInstruction(instr, false)
 	nes.PPU.RunPPUCycles(uint16(3 * instr.Cycles))
-	nes.APU.RunAPUCycles(uint16(instr.Cycles))
+	nes.APU.RunAPUCycles(uint16(instr.Cycles), lastFPS)
 
 	inVBlank := (nes.CPU.Memory[0x2002]>>7)&1 == 1
 	NMIEnabled := (nes.CPU.Memory[0x2000]>>7)&1 == 1
@@ -50,9 +50,9 @@ func runNESInstruction(nes hardware.NES, numOfInstructions *uint) {
 	}
 }
 
-func runNEStoFrame(nes hardware.NES, numOfInstructions *uint) {
+func runNEStoFrame(nes hardware.NES, numOfInstructions *uint, lastFPS int) {
 	for !nes.PPU.FrameReady {
-		runNESInstruction(nes, numOfInstructions)
+		runNESInstruction(nes, numOfInstructions, lastFPS)
 	}
 
 	//log.Printf("%+v", nes.APU.GetPulseFrequency(0x4000))
@@ -96,6 +96,7 @@ func run() {
 		frames = 0
 		us = time.Tick(16666 * time.Microsecond)
 		second = time.Tick(time.Second)
+		lastFPS = 0
 	)
 
 	// main drawing loop
@@ -104,7 +105,7 @@ func run() {
 
 		nes.CPU.CheckControllerPresses(win)
 
-		runNEStoFrame(nes, &numOfInstructions)
+		runNEStoFrame(nes, &numOfInstructions, lastFPS)
 
 		pic := pixel.PictureDataFromImage(nes.PPU.Frame)
 
@@ -117,12 +118,14 @@ func run() {
 		win.Update()
 
 		<-us
+
 		frames++
 
 		select {
 		case <-second:
 			win.SetTitle(fmt.Sprintf("FPS: %d %s", frames, cfg.Title))
 			nes.APU.Cyclelimit = uint8(29829 * frames / 44100)
+			lastFPS = frames
 			frames = 0
 		default:
 		}
