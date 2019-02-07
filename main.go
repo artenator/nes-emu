@@ -117,19 +117,20 @@ func run() {
 
 		win.Update()
 
-		<-us
+
 
 		frames++
 
 		select {
 		case <-second:
 			win.SetTitle(fmt.Sprintf("FPS: %d %s", frames, cfg.Title))
-			nes.APU.Cyclelimit = uint8(29829 * frames / 44100)
+			//nes.APU.Cyclelimit = uint8(29829 * frames / 44100)
 			lastFPS = frames
 			frames = 0
 		default:
 		}
 	}
+	<-us
 }
 
 func main() {

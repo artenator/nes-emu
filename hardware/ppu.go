@@ -313,7 +313,7 @@ func (ppu *Ppu) PPURun() {
 	}
 
 	// if a frame is ready, set bool
-	if ppu.Cycle == 0 && ppu.Scanline == 0 {
+	if ppu.Cycle == 0 && ppu.Scanline == 240 {
 		ppu.FrameReady = true
 	}
 }

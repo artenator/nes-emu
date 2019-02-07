@@ -284,13 +284,7 @@ func (apu *Apu) sequenceClockCounterRun() {
 }
 
 func (apu *Apu) RunAPUCycles(numOfCycles uint16, lastFPS int) {
-	//b := make([]byte, numOfCycles)
-	//var b []byte
-
 	for i := uint16(0); i < numOfCycles; i++ {
-		//binary.LittleEndian.PutUint16(b, uint16(apu.APURun() * 0xFFFF))
-		//binary.BigEndian.PutUint16(b, uint16(apu.APURun() * 0xFFFF))
-		//log.Printf("%x", b)
 
 		apu.cyclesPast++
 
