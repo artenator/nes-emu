@@ -115,8 +115,10 @@ func (apu *Apu) setFrameCounterValues(frameCounterValue uint8) {
 	apu.sequenceInterrupt = ((frameCounterValue >> 6) & 0x01) != 0
 	apu.sequenceCounter = 7475
 
-	apu.sweep1.sweepRun()
-	apu.sweep2.sweepRun()
+	if (apu.sequencerMode == 1) {
+		apu.quarterFrame()
+		apu.halfFrame()
+	}
 }
 
 func (sweep *Sweep) setSweepValues(sweepValue uint8) {
@@ -141,7 +143,7 @@ func (sweep *Sweep) sweepRun() {
 		sweep.counter = sweep.period
 		if (sweep.enabled) {
 			if (sweep.negate) {
-				sweep.pulse.curTimer -= (sweep.pulse.curTimer >> sweep.shiftCounter)
+				sweep.pulse.curTimer -= (sweep.pulse.curTimer >> sweep.shiftCounter) + 1
 			} else {
 				sweep.pulse.curTimer += (sweep.pulse.curTimer >> sweep.shiftCounter)
 			}
@@ -245,6 +247,15 @@ func (apu *Apu) APURun() float64 {
 	return soundOut
 }
 
+func (apu *Apu) halfFrame() {
+	apu.sweep1.sweepRun()
+	apu.sweep2.sweepRun()
+}
+
+func (apu *Apu) quarterFrame() {
+
+}
+
 func (apu *Apu) sequenceClockCounterRun() {
 	if apu.sequenceCounter > 0 {
 		apu.sequenceCounter--
@@ -253,27 +264,31 @@ func (apu *Apu) sequenceClockCounterRun() {
 		case 1:
 			switch apu.sequenceClockCounter {
 			case 0:
+				apu.quarterFrame()
 			case 1:
-				apu.sweep1.sweepRun()
-				apu.sweep2.sweepRun()
+				apu.quarterFrame()
+				apu.halfFrame()
 			case 2:
+				apu.quarterFrame()
 			case 3:
 			case 4:
-				apu.sweep1.sweepRun()
-				apu.sweep2.sweepRun()
+				apu.quarterFrame()
+				apu.halfFrame()
 			default:
 			}
 			apu.sequenceClockCounter = (apu.sequenceClockCounter + 1) % 5
 		case 0:
 			switch apu.sequenceClockCounter {
 			case 0:
+				apu.quarterFrame()
 			case 1:
-				apu.sweep1.sweepRun()
-				apu.sweep2.sweepRun()
+				apu.quarterFrame()
+				apu.halfFrame()
 			case 2:
+				apu.quarterFrame()
 			case 3:
-				apu.sweep1.sweepRun()
-				apu.sweep2.sweepRun()
+				apu.quarterFrame()
+				apu.halfFrame()
 			default:
 			}
 			apu.sequenceClockCounter = (apu.sequenceClockCounter + 1) % 4
