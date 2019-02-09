@@ -52,6 +52,7 @@ type Apu struct {
 
 type Pulse struct {
 	apu *Apu
+	sweep *Sweep
 	baseAddr uint16
 	curTimer uint16
 	curDutyIdx uint8
@@ -97,8 +98,8 @@ func (apu *Apu) InitAPU() {
 	apu.pulse1Addr = 0x4000
 	apu.pulse2Addr = 0x4004
 
-	apu.pulse1 = Pulse{apu, apu.pulse1Addr, 0, 0,}
-	apu.pulse2 = Pulse{apu,apu.pulse2Addr, 0, 0}
+	apu.pulse1 = Pulse{apu, &apu.sweep1,apu.pulse1Addr, 0, 0,}
+	apu.pulse2 = Pulse{apu,&apu.sweep2,apu.pulse2Addr, 0, 0}
 
 	apu.sweep1Addr = 0x4001
 	apu.sweep2Addr = 0x4005
@@ -115,7 +116,7 @@ func (apu *Apu) setFrameCounterValues(frameCounterValue uint8) {
 	apu.sequenceInterrupt = ((frameCounterValue >> 6) & 0x01) != 0
 	apu.sequenceCounter = 7475
 
-	if (apu.sequencerMode == 1) {
+	if apu.sequencerMode == 1 {
 		apu.quarterFrame()
 		apu.halfFrame()
 	}
@@ -133,6 +134,15 @@ func (sweep *Sweep) setSweepValues(sweepValue uint8) {
 	sweep.reload = true
 }
 
+func (sweep *Sweep) silence() bool {
+	targetPeriod := (sweep.pulse.curTimer + (sweep.pulse.curTimer >> sweep.shiftCounter))
+	if sweep.pulse.curTimer < 8 || (!sweep.negate && targetPeriod > 0x7FF) {
+		return true
+	} else {
+		return false
+	}
+}
+
 func (sweep *Sweep) sweepRun() {
 	if sweep.reload {
 		sweep.counter = sweep.period
@@ -141,7 +151,7 @@ func (sweep *Sweep) sweepRun() {
 		sweep.counter--
 	} else {
 		sweep.counter = sweep.period
-		if (sweep.enabled) {
+		if (sweep.enabled && !sweep.silence()) {
 			if (sweep.negate) {
 				sweep.pulse.curTimer -= (sweep.pulse.curTimer >> sweep.shiftCounter) + 1
 			} else {
@@ -230,14 +240,17 @@ func (pulse *Pulse) pulseRun() uint8 {
 func (apu *Apu) APURun() float64 {
 	var p1out, p2out uint8
 
-	if apu.enablePulseChannel1 {
-		p1out = apu.pulse1.pulseRun()
+	apu.pulse1.pulseRun()
+	apu.pulse2.pulseRun()
+
+	if apu.enablePulseChannel1 && !apu.sweep1.silence() {
+		p1out = apu.pulse1.out()
 	} else {
 		p1out = 0
 	}
 
-	if apu.enablePulseChannel2 {
-		p2out = apu.pulse2.pulseRun()
+	if apu.enablePulseChannel2 && !apu.sweep2.silence() {
+		p2out = apu.pulse2.out()
 	} else {
 		p2out = 0
 	}
