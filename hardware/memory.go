@@ -69,6 +69,8 @@ func (cpu *Cpu) Write8(addr uint16, value uint8) {
 			cpu.nes.APU.sweep1.setSweepValues(value)
 		} else if addr == 0x4005 {
 			cpu.nes.APU.sweep2.setSweepValues(value)
+		} else if addr == 0x4008 {
+
 		} else if addr == 0x4014 {
 			// write all the sprites to oam
 			for _, b := range cpu.Memory[0x200:0x300] {

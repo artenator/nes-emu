@@ -43,6 +43,9 @@ type Apu struct {
 	sweep1 Sweep
 	sweep2 Sweep
 
+	// triangle
+	triangle Triangle
+
 	soundOut float64
 
 	// lookup tables
@@ -79,6 +82,14 @@ type Sweep struct {
 	counter uint8
 }
 
+type Triangle struct {
+	apu *Apu
+	curTimer uint16
+	countersAddr uint16
+	baseAddr uint16
+	curTriangleIdx uint8
+}
+
 var SampleRate = 48000
 
 var dutyCycles = [4][8]uint8{
@@ -86,6 +97,10 @@ var dutyCycles = [4][8]uint8{
 	{0, 1, 1, 0, 0, 0, 0, 0},
 	{0, 1, 1, 1, 1, 0, 0, 0},
 	{1, 0, 0, 1, 1, 1, 1, 1},
+}
+
+var triangleSequence = [32]uint8{
+	15, 14, 13, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1, 0, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15,
 }
 
 func (apu *Apu) InitAPU() {
@@ -107,6 +122,8 @@ func (apu *Apu) InitAPU() {
 	apu.sweep1 = Sweep{&apu.pulse1, apu.sweep1Addr,  false, 0, false, 0, false, 0}
 	apu.sweep2 = Sweep{&apu.pulse2, apu.sweep2Addr,  false, 0, false, 0, false, 0}
 
+	apu.triangle = Triangle{apu, 0, 0x4008, 0x400A,0}
+
 	apu.populatePulseTable()
 	apu.populateTNDTable()
 }
@@ -120,6 +137,29 @@ func (apu *Apu) setFrameCounterValues(frameCounterValue uint8) {
 		apu.quarterFrame()
 		apu.halfFrame()
 	}
+}
+
+func (triangle *Triangle) getTriangleTimer() uint16 {
+	baseAddr := triangle.baseAddr
+	low := uint16(triangle.apu.nes.CPU.Memory[baseAddr])
+	high := uint16(triangle.apu.nes.CPU.Memory[baseAddr + 1] & 0x07)
+
+	return (high << 8) | low
+}
+
+func (triangle *Triangle) out() uint8 {
+	return triangleSequence[triangle.curTriangleIdx]
+}
+
+func (triangle *Triangle) triangleRun()  uint8 {
+	if triangle.curTimer <= 0 {
+		triangle.curTimer = triangle.getTriangleTimer()
+		triangle.curTriangleIdx = (triangle.curTriangleIdx + 1) % 32
+	} else {
+		triangle.curTimer--
+	}
+
+	return triangle.out()
 }
 
 func (sweep *Sweep) setSweepValues(sweepValue uint8) {
@@ -255,7 +295,7 @@ func (apu *Apu) APURun() float64 {
 		p2out = 0
 	}
 
-	soundOut := apu.out(p1out, p2out, 0, 0, 0)
+	soundOut := apu.out(p1out, p2out, apu.triangle.out(), 0, 0)
 
 	return soundOut
 }
@@ -317,6 +357,7 @@ func (apu *Apu) RunAPUCycles(numOfCycles uint16, lastFPS int) {
 		apu.cyclesPast++
 
 		apu.sequenceClockCounterRun()
+		apu.triangle.triangleRun()
 
 		if apu.cyclesPast % 2 == 0 {
 
