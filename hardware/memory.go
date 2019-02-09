@@ -64,13 +64,15 @@ func (cpu *Cpu) Write8(addr uint16, value uint8) {
 
 		}
 	} else {
-		// OAMDMA at 0x4014 write
 		if addr == 0x4001 {
 			cpu.nes.APU.sweep1.setSweepValues(value)
 		} else if addr == 0x4005 {
 			cpu.nes.APU.sweep2.setSweepValues(value)
 		} else if addr == 0x4008 {
-
+			cpu.nes.APU.triangle.setLinearCounterValues(value)
+		} else if addr == 0x400B {
+			cpu.nes.APU.triangle.linearReload = true
+			// OAMDMA at 0x4014 write
 		} else if addr == 0x4014 {
 			// write all the sprites to oam
 			for _, b := range cpu.Memory[0x200:0x300] {

@@ -2,6 +2,7 @@ package hardware
 
 import (
 	"github.com/hajimehoshi/oto"
+	"log"
 )
 
 type Apu struct {
@@ -13,6 +14,9 @@ type Apu struct {
 	// cycle counter
 	cyclesPast uint8
 	Cyclelimit uint8
+
+	// audioSamples
+	audioSamples []float64
 
 	// Status 0x4015
 	enableDMC bool
@@ -88,6 +92,9 @@ type Triangle struct {
 	countersAddr uint16
 	baseAddr uint16
 	curTriangleIdx uint8
+	linearReload bool
+	linearControl bool
+	linearCounter uint8
 }
 
 var SampleRate = 48000
@@ -104,11 +111,19 @@ var triangleSequence = [32]uint8{
 }
 
 func (apu *Apu) InitAPU() {
+	// init audio player
+	apu.Cyclelimit = 40
+	var err error
+	if apu.audioDevice, err = oto.NewPlayer(44100, 1, 1, 4096); err != nil {
+		log.Fatal("Audio could not be initialized")
+	}
 	apu.enableDMC = false
 	apu.enableNoise = false
 	apu.enableTriangle = false
 	apu.enablePulseChannel1 = false
 	apu.enablePulseChannel2 = false
+
+	apu.audioSamples = make([]float64, apu.Cyclelimit)
 
 	apu.pulse1Addr = 0x4000
 	apu.pulse2Addr = 0x4004
@@ -122,7 +137,7 @@ func (apu *Apu) InitAPU() {
 	apu.sweep1 = Sweep{&apu.pulse1, apu.sweep1Addr,  false, 0, false, 0, false, 0}
 	apu.sweep2 = Sweep{&apu.pulse2, apu.sweep2Addr,  false, 0, false, 0, false, 0}
 
-	apu.triangle = Triangle{apu, 0, 0x4008, 0x400A,0}
+	apu.triangle = Triangle{apu, 0, 0x4008, 0x400A,0, false, false, 0}
 
 	apu.populatePulseTable()
 	apu.populateTNDTable()
@@ -137,6 +152,14 @@ func (apu *Apu) setFrameCounterValues(frameCounterValue uint8) {
 		apu.quarterFrame()
 		apu.halfFrame()
 	}
+}
+
+func (triangle *Triangle) setLinearCounterValues(linearCounterValue uint8) {
+	triangle.linearControl = (linearCounterValue >> 7) & 0x01 == 1
+}
+
+func (triangle *Triangle) reloadLinearCounter() {
+	triangle.linearCounter = triangle.apu.nes.CPU.Memory[triangle.countersAddr] & 0x7F
 }
 
 func (triangle *Triangle) getTriangleTimer() uint16 {
@@ -175,7 +198,7 @@ func (sweep *Sweep) setSweepValues(sweepValue uint8) {
 }
 
 func (sweep *Sweep) silence() bool {
-	targetPeriod := (sweep.pulse.curTimer + (sweep.pulse.curTimer >> sweep.shiftCounter))
+	targetPeriod := sweep.pulse.curTimer + (sweep.pulse.curTimer >> sweep.shiftCounter)
 	if sweep.pulse.curTimer < 8 || (!sweep.negate && targetPeriod > 0x7FF) {
 		return true
 	} else {
@@ -278,7 +301,7 @@ func (pulse *Pulse) pulseRun() uint8 {
 }
 
 func (apu *Apu) APURun() float64 {
-	var p1out, p2out uint8
+	var p1out, p2out, triout uint8
 
 	apu.pulse1.pulseRun()
 	apu.pulse2.pulseRun()
@@ -295,7 +318,13 @@ func (apu *Apu) APURun() float64 {
 		p2out = 0
 	}
 
-	soundOut := apu.out(p1out, p2out, apu.triangle.out(), 0, 0)
+	if apu.enableTriangle {
+		triout = apu.triangle.out()
+	} else {
+		triout = 0
+	}
+
+	soundOut := apu.out(p1out, p2out, triout, 0, 0)
 
 	return soundOut
 }
@@ -306,7 +335,15 @@ func (apu *Apu) halfFrame() {
 }
 
 func (apu *Apu) quarterFrame() {
+	if apu.triangle.linearReload {
+		apu.triangle.reloadLinearCounter()
+	} else if apu.triangle.linearCounter > 0 {
+		apu.triangle.linearCounter--
+	}
 
+	if !apu.triangle.linearControl {
+		apu.triangle.linearReload = false
+	}
 }
 
 func (apu *Apu) sequenceClockCounterRun() {
@@ -351,21 +388,37 @@ func (apu *Apu) sequenceClockCounterRun() {
 	}
 }
 
+func (apu *Apu) averageSoundSamples() float64 {
+	var sum float64
+
+	for _, sample := range apu.audioSamples{
+		sum += sample
+	}
+
+	return sum / float64(apu.Cyclelimit)
+}
+
 func (apu *Apu) RunAPUCycles(numOfCycles uint16, lastFPS int) {
 	for i := uint16(0); i < numOfCycles; i++ {
 
-		apu.cyclesPast++
-
 		apu.sequenceClockCounterRun()
+
+
+		if apu.triangle.linearCounter > 0 {
+
+		}
 		apu.triangle.triangleRun()
 
 		if apu.cyclesPast % 2 == 0 {
-
 			apu.soundOut = apu.APURun()
-			if apu.cyclesPast >= apu.Cyclelimit {
-				apu.cyclesPast = 0
-				apu.audioDevice.Write([]byte{byte(apu.soundOut * 0xFF)})
-			}
+		}
+
+		if apu.cyclesPast >= apu.Cyclelimit {
+			apu.cyclesPast = 0
+			apu.audioDevice.Write([]byte{byte(apu.averageSoundSamples() * 0xFF)})
+		} else {
+			apu.audioSamples[apu.cyclesPast] = apu.soundOut
+			apu.cyclesPast++
 		}
 	}
 }
