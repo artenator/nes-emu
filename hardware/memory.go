@@ -69,11 +69,11 @@ func (cpu *Cpu) Write8(addr uint16, value uint8) {
 		if addr == 0x4001 {
 			cpu.nes.APU.sweep1.setSweepValues(value)
 		} else if addr == 0x4003 {
-			cpu.nes.APU.pulse1.SetTargetTimer()
+			cpu.nes.APU.pulse1.setTargetTimer()
 		} else if addr == 0x4005 {
 			cpu.nes.APU.sweep2.setSweepValues(value)
 		} else if addr == 0x4007 {
-			cpu.nes.APU.pulse2.SetTargetTimer()
+			cpu.nes.APU.pulse2.setTargetTimer()
 		} else if addr == 0x4008 {
 			cpu.nes.APU.triangle.setLinearCounterValues(value)
 		} else if addr == 0x400B {

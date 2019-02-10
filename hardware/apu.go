@@ -305,7 +305,7 @@ func (pulse *Pulse) getPulTimer() uint16{
 	return (high << 8) | low
 }
 
-func (pulse *Pulse) SetTargetTimer() {
+func (pulse *Pulse) setTargetTimer() {
 	pulse.targetTimer = pulse.getPulTimer()
 	pulse.curTimer = pulse.targetTimer
 }
