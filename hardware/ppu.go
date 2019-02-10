@@ -197,10 +197,9 @@ func (ppu *Ppu) getBackgroundColorAtPixelOptimized(x, y uint8, backgroundTile [8
 }
 
 func (ppu *Ppu) getSpriteColorAtPixel(x, y uint8, s Sprite) Color {
-	flipHorizontal := false
-	if (s.attributes >> 6) & 1 == 1 {
-		flipHorizontal = true
-	}
+	flipHorizontal := (s.attributes >> 6) & 1 == 1
+	flipVertical := (s.attributes >> 7) & 1 == 1
+
 
 	backgroundTileBase := uint16((ppu.nes.CPU.Memory[0x2000]>>3)&1) * 0x1000
 	backgroundTilePos := s.tileNum
@@ -212,6 +211,9 @@ func (ppu *Ppu) getSpriteColorAtPixel(x, y uint8, s Sprite) Color {
 	}
 
 	yBG := y % 8
+	if flipVertical {
+		yBG = 7 - y % 8
+	}
 
 	spriteColorPalette := ppu.getSpriteColorPalette(s.attributes & 0x03)
 	spriteColor := spriteColorPalette[backgroundTile[yBG][xBG]]
