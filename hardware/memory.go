@@ -64,14 +64,23 @@ func (cpu *Cpu) Write8(addr uint16, value uint8) {
 
 		}
 	} else {
+		cpu.Memory[addr] = value
+
 		if addr == 0x4001 {
 			cpu.nes.APU.sweep1.setSweepValues(value)
+		} else if addr == 0x4003 {
+			cpu.nes.APU.pulse1.SetTargetTimer()
 		} else if addr == 0x4005 {
 			cpu.nes.APU.sweep2.setSweepValues(value)
+		} else if addr == 0x4007 {
+			cpu.nes.APU.pulse2.SetTargetTimer()
 		} else if addr == 0x4008 {
 			cpu.nes.APU.triangle.setLinearCounterValues(value)
 		} else if addr == 0x400B {
 			cpu.nes.APU.triangle.linearReload = true
+			if cpu.nes.APU.enableTriangle {
+				cpu.nes.APU.triangle.setLengthCounter(value)
+			}
 			// OAMDMA at 0x4014 write
 		} else if addr == 0x4014 {
 			// write all the sprites to oam
@@ -92,9 +101,6 @@ func (cpu *Cpu) Write8(addr uint16, value uint8) {
 		} else if addr == 0x4017 {
 			cpu.nes.APU.setFrameCounterValues(value)
 		}
-
-		cpu.Memory[addr] = value
-
 	}
 }
 

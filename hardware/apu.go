@@ -30,6 +30,7 @@ type Apu struct {
 	sequencerMode uint8
 	sequenceInterrupt bool
 	sequenceCounter uint32
+	cyclesPerSequence uint32
 
 	// pulse base addrs
 	pulse1Addr uint16
@@ -61,6 +62,7 @@ type Pulse struct {
 	apu *Apu
 	sweep *Sweep
 	baseAddr uint16
+	targetTimer uint16
 	curTimer uint16
 	curDutyIdx uint8
 }
@@ -95,6 +97,8 @@ type Triangle struct {
 	linearReload bool
 	linearControl bool
 	linearCounter uint8
+	lengthEnabled bool
+	lengthCounter uint8
 }
 
 var SampleRate = 48000
@@ -110,6 +114,11 @@ var triangleSequence = [32]uint8{
 	15, 14, 13, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1, 0, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15,
 }
 
+var lengthTable = [32]uint8{
+	10, 254, 20,  2, 40,  4, 80,  6, 160,  8, 60, 10, 14, 12, 26, 14,
+	12, 16, 24, 18, 48, 20, 96, 22, 192, 24, 72, 26, 16, 28, 32, 30,
+}
+
 func (apu *Apu) InitAPU() {
 	// init audio player
 	apu.Cyclelimit = 40
@@ -123,13 +132,15 @@ func (apu *Apu) InitAPU() {
 	apu.enablePulseChannel1 = false
 	apu.enablePulseChannel2 = false
 
+	apu.cyclesPerSequence = 7457
+
 	apu.audioSamples = make([]float64, apu.Cyclelimit)
 
 	apu.pulse1Addr = 0x4000
 	apu.pulse2Addr = 0x4004
 
-	apu.pulse1 = Pulse{apu, &apu.sweep1,apu.pulse1Addr, 0, 0,}
-	apu.pulse2 = Pulse{apu,&apu.sweep2,apu.pulse2Addr, 0, 0}
+	apu.pulse1 = Pulse{apu, &apu.sweep1,apu.pulse1Addr, 0, 0, 0}
+	apu.pulse2 = Pulse{apu,&apu.sweep2,apu.pulse2Addr, 0, 0, 0}
 
 	apu.sweep1Addr = 0x4001
 	apu.sweep2Addr = 0x4005
@@ -137,7 +148,7 @@ func (apu *Apu) InitAPU() {
 	apu.sweep1 = Sweep{&apu.pulse1, apu.sweep1Addr,  false, 0, false, 0, false, 0}
 	apu.sweep2 = Sweep{&apu.pulse2, apu.sweep2Addr,  false, 0, false, 0, false, 0}
 
-	apu.triangle = Triangle{apu, 0, 0x4008, 0x400A,0, false, false, 0}
+	apu.triangle = Triangle{apu, 0, 0x4008, 0x400A,0, false, false, 0, false, 0}
 
 	apu.populatePulseTable()
 	apu.populateTNDTable()
@@ -146,7 +157,7 @@ func (apu *Apu) InitAPU() {
 func (apu *Apu) setFrameCounterValues(frameCounterValue uint8) {
 	apu.sequencerMode = (frameCounterValue >> 7) & 0x01
 	apu.sequenceInterrupt = ((frameCounterValue >> 6) & 0x01) != 0
-	apu.sequenceCounter = 7475
+	apu.sequenceCounter = apu.cyclesPerSequence
 
 	if apu.sequencerMode == 1 {
 		apu.quarterFrame()
@@ -156,6 +167,11 @@ func (apu *Apu) setFrameCounterValues(frameCounterValue uint8) {
 
 func (triangle *Triangle) setLinearCounterValues(linearCounterValue uint8) {
 	triangle.linearControl = (linearCounterValue >> 7) & 0x01 == 1
+	triangle.lengthEnabled = !triangle.linearControl
+}
+
+func (triangle *Triangle) setLengthCounter(value uint8) {
+	triangle.lengthCounter = lengthTable[(value >> 3) & 0x1F]
 }
 
 func (triangle *Triangle) reloadLinearCounter() {
@@ -214,11 +230,11 @@ func (sweep *Sweep) sweepRun() {
 		sweep.counter--
 	} else {
 		sweep.counter = sweep.period
-		if (sweep.enabled && !sweep.silence()) {
-			if (sweep.negate) {
-				sweep.pulse.curTimer -= (sweep.pulse.curTimer >> sweep.shiftCounter) + 1
+		if sweep.enabled && !sweep.silence() {
+			if sweep.negate {
+				sweep.pulse.targetTimer -= (sweep.pulse.targetTimer >> sweep.shiftCounter)
 			} else {
-				sweep.pulse.curTimer += (sweep.pulse.curTimer >> sweep.shiftCounter)
+				sweep.pulse.targetTimer += (sweep.pulse.targetTimer >> sweep.shiftCounter)
 			}
 		}
 	}
@@ -289,9 +305,14 @@ func (pulse *Pulse) getPulTimer() uint16{
 	return (high << 8) | low
 }
 
+func (pulse *Pulse) SetTargetTimer() {
+	pulse.targetTimer = pulse.getPulTimer()
+	pulse.curTimer = pulse.targetTimer
+}
+
 func (pulse *Pulse) pulseRun() uint8 {
 	if pulse.curTimer <= 0 {
-		pulse.curTimer = pulse.getPulTimer()
+		pulse.curTimer = pulse.targetTimer
 		pulse.curDutyIdx = (pulse.curDutyIdx + 1) % 8
 	} else {
 		pulse.curTimer--
@@ -329,27 +350,39 @@ func (apu *Apu) APURun() float64 {
 	return soundOut
 }
 
+func (triangle *Triangle) linearCounterRun() {
+	if triangle.linearReload {
+		triangle.reloadLinearCounter()
+	} else if triangle.linearCounter > 0 {
+		triangle.linearCounter--
+	}
+
+	if !triangle.linearControl {
+		triangle.linearReload = false
+	}
+}
+
+func (triangle *Triangle) lengthCounterRun() {
+	if triangle.lengthEnabled && triangle.lengthCounter > 0 {
+		triangle.lengthCounter--
+	}
+}
+
 func (apu *Apu) halfFrame() {
 	apu.sweep1.sweepRun()
 	apu.sweep2.sweepRun()
+	apu.triangle.lengthCounterRun()
 }
 
 func (apu *Apu) quarterFrame() {
-	if apu.triangle.linearReload {
-		apu.triangle.reloadLinearCounter()
-	} else if apu.triangle.linearCounter > 0 {
-		apu.triangle.linearCounter--
-	}
-
-	if !apu.triangle.linearControl {
-		apu.triangle.linearReload = false
-	}
+	apu.triangle.linearCounterRun()
 }
 
 func (apu *Apu) sequenceClockCounterRun() {
 	if apu.sequenceCounter > 0 {
 		apu.sequenceCounter--
 	} else {
+		apu.sequenceCounter = apu.cyclesPerSequence
 		switch apu.sequencerMode {
 		case 1:
 			switch apu.sequenceClockCounter {
@@ -400,14 +433,11 @@ func (apu *Apu) averageSoundSamples() float64 {
 
 func (apu *Apu) RunAPUCycles(numOfCycles uint16, lastFPS int) {
 	for i := uint16(0); i < numOfCycles; i++ {
+		if apu.triangle.linearCounter > 0 && apu.triangle.lengthCounter > 0 {
+			apu.triangle.triangleRun()
+		}
 
 		apu.sequenceClockCounterRun()
-
-
-		if apu.triangle.linearCounter > 0 {
-
-		}
-		apu.triangle.triangleRun()
 
 		if apu.cyclesPast % 2 == 0 {
 			apu.soundOut = apu.APURun()
