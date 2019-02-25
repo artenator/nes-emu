@@ -64,7 +64,6 @@ func (cpu *Cpu) Write8(addr uint16, value uint8) {
 		// PPUDATA
 		if truncAddr == 0x2007 {
 			cpu.nes.PPU.Write8(value)
-			log.Printf("%x", cpu.Memory[0x0400:0x0410])
 		}
 		// OAMADDR
 		if truncAddr == 0x2003 {
@@ -77,7 +76,7 @@ func (cpu *Cpu) Write8(addr uint16, value uint8) {
 		// PPUSCROLL
 		if truncAddr == 0x2005 {
 			cpu.nes.PPU.setPpuScrollAddr(value)
-			//log.Printf("writing to ppuscroll 0x%x", value)
+			log.Printf("writing to ppuscroll 0x%x", value)
 			//log.Printf("+%v", cpu.nes.PPU.Memory[0x2000:0x3000])
 		}
 	} else {
