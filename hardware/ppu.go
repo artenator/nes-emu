@@ -4,6 +4,7 @@ import (
 	"encoding/binary"
 	"image"
 	"image/color"
+	"log"
 )
 
 type Ppu struct {
@@ -12,6 +13,8 @@ type Ppu struct {
 	ppuAddrCounter uint8
 	ppuAddrMSB     uint8
 	ppuAddrLSB     uint8
+	ppuScrollMSB     uint8
+	ppuScrollLSB     uint8
 	ppuAddrOffset  uint16
 	oamAddr        uint8
 	oamSpriteAddr  uint8
@@ -20,15 +23,73 @@ type Ppu struct {
 	Scanline	   uint16
 	Frame		   *image.RGBA
 	FrameReady	   bool
+
+	ppumask     PpuMask
+	NmiOccurred bool
+	PpuReady bool
+}
+
+type PpuMask struct {
+	emphBlue bool
+	emphGreen bool
+	emphRed bool
+	spriteEnable bool
+	backgroundEnable bool
+	spriteLeftColumnEnable bool
+	backgroundLeftColumnEnable bool
+	greyScale bool
+}
+
+func (mask *PpuMask) setValues(value uint8) {
+	mask.emphBlue = (value >> 7) & 1 == 1
+	mask.emphGreen = (value >> 6) & 1 == 1
+	mask.emphRed = (value >> 5) & 1 == 1
+	mask.spriteEnable = (value >> 4) & 1 == 1
+	mask.backgroundEnable = (value >> 3) & 1 == 1
+	mask.spriteLeftColumnEnable = (value >> 2) & 1 == 1
+	mask.backgroundLeftColumnEnable = (value >> 1) & 1 == 1
+	mask.greyScale = value & 1 == 1
+}
+
+func (ppu *Ppu) DataRead() uint8 {
+	ppuAddressArr := []uint8{ppu.ppuAddrMSB, ppu.ppuAddrLSB}
+	ppuWriteAddress := binary.BigEndian.Uint16(ppuAddressArr)
+
+	absReadAddress := (ppuWriteAddress+ppu.ppuAddrOffset) & 0x3FFF
+
+	log.Printf("reading ppu 0x%x, value: 0x%x, OFFSET: %d", absReadAddress, ppu.Read8(absReadAddress), ppu.ppuAddrOffset)
+
+	ppu.incrementAddress()
+
+	return ppu.Read8(absReadAddress)
 }
 
 func (ppu *Ppu) Write8(value uint8) {
 	ppuAddressArr := []uint8{ppu.ppuAddrMSB, ppu.ppuAddrLSB}
 	ppuWriteAddress := binary.BigEndian.Uint16(ppuAddressArr)
 
-	ppu.Memory[ppuWriteAddress+ppu.ppuAddrOffset] = value
+	absWriteAddress := (ppuWriteAddress+ppu.ppuAddrOffset) & 0x3FFF
 
-	if (ppu.nes.CPU.Memory[0x2000]>>2)&1 == 1 {
+	ppu.Memory[absWriteAddress] = value
+
+	if absWriteAddress >= 0x2000 && absWriteAddress < 0x2400 {
+		ppu.Memory[absWriteAddress + 0x400] = value
+	} else if absWriteAddress >= 0x2400 && absWriteAddress < 0x2800 {
+		ppu.Memory[absWriteAddress - 0x400] = value
+	} else if absWriteAddress >= 0x2800 && absWriteAddress < 0x2C00 {
+		ppu.Memory[absWriteAddress + 0x400] = value
+	} else if absWriteAddress >= 0x2C00 && absWriteAddress < 0x3000 {
+		ppu.Memory[absWriteAddress - 0x400] = value
+	}
+
+	log.Printf("writing ppu 0x%x, value: 0x%x, OFFSET: %d", absWriteAddress, ppu.Read8(absWriteAddress), ppu.ppuAddrOffset)
+
+	ppu.incrementAddress()
+}
+
+func (ppu *Ppu) incrementAddress() {
+	incrementDown := (ppu.nes.CPU.Memory[0x2000]>>2)&1 == 1
+	if incrementDown {
 		ppu.ppuAddrOffset += 0x20
 	} else {
 		ppu.ppuAddrOffset++
@@ -40,14 +101,27 @@ func (ppu *Ppu) Read8(addr uint16) uint8 {
 }
 
 func (ppu *Ppu) setPpuAddr(addr uint8) {
-	if ppu.ppuAddrCounter%2 == 0 {
+	if ppu.ppuAddrCounter == 0 {
 		ppu.ppuAddrMSB = addr
+		ppu.ppuAddrCounter = 1
 	} else {
 		ppu.ppuAddrLSB = addr
+		ppu.ppuAddrCounter = 0
 		ppu.ppuAddrOffset = 0
 	}
 
-	ppu.ppuAddrCounter++
+	//log.Printf("setting ppu address 0x%x", addr)
+}
+
+func (ppu *Ppu) setPpuScrollAddr(addr uint8) {
+	if ppu.ppuAddrCounter == 0 {
+		ppu.ppuScrollMSB = addr
+		ppu.ppuAddrCounter = 1
+	} else {
+		ppu.ppuScrollLSB = addr
+		ppu.ppuAddrCounter = 0
+		ppu.ppuAddrOffset = 0
+	}
 }
 
 func (ppu *Ppu) SetVBlank() {
@@ -63,6 +137,26 @@ func (ppu *Ppu) get8x8Tile(base uint16, pos uint16) [8][8]uint8 {
 	b1 := ppu.Memory[base+(pos*0x10)+8 : base+(pos*0x10)+16]
 
 	var result [8][8]uint8
+
+	for i := 0; i < 8; i++ {
+		barr0 := b0[i]
+		barr1 := b1[i]
+		for j := uint8(0); j < 8; j++ {
+			var biResult uint8
+			biResult |= (barr0 >> (7 - j)) & 1
+			biResult |= ((barr1 >> (7 - j)) & 1) << 1
+			result[i][j] = biResult
+		}
+	}
+
+	return result
+}
+
+func (ppu *Ppu) get8x16Tile(base uint16, pos uint16) [16][8]uint8 {
+	b0 := ppu.Memory[base+(pos*0x10) : base+(pos*0x10)+8]
+	b1 := ppu.Memory[base+(pos*0x10)+8 : base+(pos*0x10)+16]
+
+	var result [16][8]uint8
 
 	for i := 0; i < 8; i++ {
 		barr0 := b0[i]
@@ -200,7 +294,6 @@ func (ppu *Ppu) getSpriteColorAtPixel(x, y uint8, s Sprite) Color {
 	flipHorizontal := (s.attributes >> 6) & 1 == 1
 	flipVertical := (s.attributes >> 7) & 1 == 1
 
-
 	backgroundTileBase := uint16((ppu.nes.CPU.Memory[0x2000]>>3)&1) * 0x1000
 	backgroundTilePos := s.tileNum
 
@@ -231,7 +324,6 @@ func (ppu *Ppu) GetColorAtPixel(x, y uint8) Color {
 
 	for _, sprite := range ppu.OAM {
 		if sprite.yCoord > 0x00 && sprite.yCoord < 0xEF {
-			// TODO: 8x16 sprites
 			inRangeX := x >= sprite.xCoord && x < sprite.xCoord+8
 			inRangeY := y >= sprite.yCoord && y < sprite.yCoord+8
 			if inRangeX && inRangeY {
@@ -254,13 +346,17 @@ func (ppu *Ppu) GetColorAtPixel(x, y uint8) Color {
 func (ppu *Ppu) GetColorAtPixelOptimized(x, y uint8, backgroundTile [8][8]uint8, attributeTile [2][2]uint8) Color {
 	var color Color
 
-	for _, sprite := range ppu.OAM {
+	for id, sprite := range ppu.OAM {
 		if sprite.yCoord > 0x00 && sprite.yCoord < 0xEF {
 			// TODO: 8x16 sprites
+			// trigger sprite 0 hit
+			if id == 0 && ppu.ppumask.backgroundEnable && ppu.ppumask.spriteEnable {
+				ppu.setSpriteHit()
+			}
 			inRangeX := x >= sprite.xCoord && x < sprite.xCoord+8
 			inRangeY := y >= sprite.yCoord && y < sprite.yCoord+8
 			if inRangeX && inRangeY {
-				spriteColor := ppu.getSpriteColorAtPixel(x - sprite.xCoord, y - sprite.yCoord, sprite)
+				spriteColor := ppu.getSpriteColorAtPixel(x-sprite.xCoord, y-sprite.yCoord, sprite)
 				if spriteColor.A > 0 {
 					return spriteColor
 				} else {
@@ -276,25 +372,38 @@ func (ppu *Ppu) GetColorAtPixelOptimized(x, y uint8, backgroundTile [8][8]uint8,
 	return color
 }
 
+func (ppu *Ppu) setSpriteHit() {
+	ppu.nes.CPU.Memory[0x2002] |= 0x40
+}
+
+func (ppu *Ppu) clearSpriteHit() {
+	ppu.nes.CPU.Memory[0x2002] &= 0xBF
+}
+
 func (ppu *Ppu) PPURun() {
+
+	if ppu.Scanline == 0 {
+		ppu.NmiOccurred = false
+		ppu.clearSpriteHit()
+	}
 
 	if ppu.Cycle == 340 && ppu.Scanline < 240 {
 		backgroundTileBase := uint16((ppu.nes.CPU.Memory[0x2000]>>4)&1) * 0x1000
 		backgroundTileOffset := (uint16(0/8) * 32) + (uint16(0/8) % 32)
 		nameTableSelect := ppu.nes.CPU.Memory[0x2000] & 0x03
-		nameTableBase := 0x2000 + uint16(uint16(nameTableSelect) * 0x400)
+		nameTableBase := 0x2000 + uint16(uint16(nameTableSelect)*0x400)
 		backgroundTilePos := ppu.Memory[nameTableBase+backgroundTileOffset]
 		backgroundTile := ppu.get8x8Tile(backgroundTileBase, uint16(backgroundTilePos))
-		attributePalettePos := uint8((0 / 32) * 8) + ((0 / 32) % 32)
+		attributePalettePos := uint8((0/32)*8) + ((0 / 32) % 32)
 		attributeTile := ppu.get2x2Attribute(backgroundTileBase, attributePalettePos)
 		sl := ppu.Scanline
 		for x := 0; x < 256; x++ {
-			if x % 8 == 0 {
+			if x%8 == 0 {
 				backgroundTileOffset = (uint16(sl/8) * 32) + (uint16(x/8) % 32)
-				nameTableBase = 0x2000 + uint16(uint16(nameTableSelect) * 0x400)
+				nameTableBase = 0x2000 + uint16(uint16(nameTableSelect)*0x400)
 				backgroundTilePos = ppu.Memory[nameTableBase+backgroundTileOffset]
 				backgroundTile = ppu.get8x8Tile(backgroundTileBase, uint16(backgroundTilePos))
-				attributePalettePos = uint8((sl / 32) * 8) + ((uint8(x) / 32) % 32)
+				attributePalettePos = uint8((sl/32)*8) + ((uint8(x) / 32) % 32)
 				attributeTile = ppu.get2x2Attribute(backgroundTileBase, attributePalettePos)
 			}
 			c := ppu.GetColorAtPixelOptimized(uint8(x), uint8(sl), backgroundTile, attributeTile)
@@ -305,7 +414,7 @@ func (ppu *Ppu) PPURun() {
 	if ppu.Scanline == 259 && ppu.Cycle == 340 {
 		ppu.ClearVBlank()
 	}
-	if ppu.Scanline == 241  && ppu.Cycle == 0 {
+	if ppu.Scanline == 241 && ppu.Cycle == 0 {
 		ppu.SetVBlank()
 	}
 

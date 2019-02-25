@@ -2,23 +2,28 @@ package hardware
 
 import (
 	"encoding/binary"
+	"log"
 )
 
 func (cpu *Cpu) Read8(addr uint16) uint8 {
 	if addr < 0x2000 {
 		return cpu.Memory[addr&0x7FF]
 	} else if addr >= 0x2000 && addr < 0x4000 {
-		readValue := cpu.Memory[addr&0x2007]
-		if addr == 0x2002 {
+		truncAddr := addr&0x2007
+		readValue := cpu.Memory[truncAddr]
+		if truncAddr == 0x2002 {
 			cpu.nes.PPU.ClearVBlank()
+			cpu.nes.PPU.ppuAddrCounter = 0
+		}
+		if truncAddr == 0x2007 {
+			readValue = cpu.nes.PPU.DataRead()
 		}
 		return readValue
+	} else if addr == 0x4016 {
+		val := (cpu.Controller >> (7 - (cpu.ControllerIdx % 8))) & 1
+		cpu.ControllerIdx++
+		return val
 	} else {
-		if addr == 0x4016 {
-			val := (cpu.Controller >> (7 - (cpu.ControllerIdx % 8))) & 1
-			cpu.ControllerIdx++
-			return val
-		}
 		return cpu.Memory[addr]
 	}
 }
@@ -44,24 +49,36 @@ func (cpu *Cpu) Write8(addr uint16, value uint8) {
 
 		cpu.Memory[truncAddr] = value
 
-		if addr >= 0x2000 && addr < 0x4000 {
-			// PPUADDR
-			if truncAddr == 0x2006 {
-				cpu.nes.PPU.setPpuAddr(cpu.A)
-			}
-			// PPUDATA
-			if truncAddr == 0x2007 {
-				cpu.nes.PPU.Write8(cpu.A)
-			}
-			// OAMADDR
-			if truncAddr == 0x2003 {
-				cpu.nes.PPU.SetOamAddr(cpu.A)
-			}
-			// OAMDATA
-			if truncAddr == 0x2004 {
-				cpu.nes.PPU.WriteOAM8(cpu.A)
-			}
+		if truncAddr == 0x2000 {
+			//log.Printf("writing to PPUCTRL %s", strconv.FormatInt(int64(value), 2))
+		}
 
+		// PPUMASK
+		if truncAddr == 0x2001 {
+			cpu.nes.PPU.ppumask.setValues(value)
+		}
+		// PPUADDR
+		if truncAddr == 0x2006 {
+			cpu.nes.PPU.setPpuAddr(value)
+		}
+		// PPUDATA
+		if truncAddr == 0x2007 {
+			cpu.nes.PPU.Write8(value)
+			log.Printf("%x", cpu.Memory[0x0400:0x0410])
+		}
+		// OAMADDR
+		if truncAddr == 0x2003 {
+			cpu.nes.PPU.SetOamAddr(value)
+		}
+		// OAMDATA
+		if truncAddr == 0x2004 {
+			cpu.nes.PPU.WriteOAM8(value)
+		}
+		// PPUSCROLL
+		if truncAddr == 0x2005 {
+			cpu.nes.PPU.setPpuScrollAddr(value)
+			//log.Printf("writing to ppuscroll 0x%x", value)
+			//log.Printf("+%v", cpu.nes.PPU.Memory[0x2000:0x3000])
 		}
 	} else {
 		cpu.Memory[addr] = value
@@ -100,6 +117,8 @@ func (cpu *Cpu) Write8(addr uint16, value uint8) {
 			}
 		} else if addr == 0x4017 {
 			cpu.nes.APU.setFrameCounterValues(value)
+		} else if addr >= 0x6000 && addr <= 0x6005 {
+			log.Printf("TEST RESULTS: %x, %d", addr, value)
 		}
 	}
 }

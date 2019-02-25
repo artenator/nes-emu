@@ -1,6 +1,8 @@
 package hardware
 
-import "github.com/faiface/pixel/pixelgl"
+import (
+	"github.com/faiface/pixel/pixelgl"
+)
 
 
 func (cpu *Cpu) joy1PressButtonA() {

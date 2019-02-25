@@ -1,7 +1,6 @@
 package hardware
 
 import (
-	"log"
 	"math"
 )
 
@@ -39,6 +38,9 @@ type Cpu struct {
 	// Controller
 	Controller uint8
 	ControllerIdx uint8
+
+	//totalCycles
+	totalCycles uint64
 }
 
 func (cpu *Cpu) setCpuInitialState() {
@@ -46,8 +48,8 @@ func (cpu *Cpu) setCpuInitialState() {
 	cpu.P = 0x24
 
 	// PPU register initial state
-	cpu.Memory[0x2000] = 0x80
-	cpu.Memory[0x2002] = 0xA0
+	cpu.Memory[0x2000] = 0x00
+	cpu.Memory[0x2002] = 0x00
 
 	// initialize the stack pointer
 	cpu.SP = 0xFD
@@ -56,7 +58,7 @@ func (cpu *Cpu) setCpuInitialState() {
 func (cpu *Cpu) Reset() {
 	// Read first instruction address location
 	firstInstruction := cpu.Read16(0xFFFC)
-	//firstInstruction := uint16(0xC000)
+	//firstInstruction := uint16(0xCAEA)
 
 	// Set the PC to be at the address
 	cpu.PC = firstInstruction
@@ -67,10 +69,12 @@ func (cpu *Cpu) Reset() {
 	cpu.nes.APU.InitAPU()
 
 	// print the whole CPU and memory!!
-	log.Printf("%+v\n", cpu)
+	//log.Printf("%+v\n", cpu)
 }
 
 func (cpu *Cpu) HandleNMI() {
+	cpu.nes.PPU.NmiOccurred = true
+
 	// Push current pc to the stack
 	cpu.Push16(cpu.PC)
 

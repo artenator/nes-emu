@@ -1,8 +1,10 @@
 package hardware
 
-import ("io/ioutil"
+import (
+	"errors"
+	"io/ioutil"
 	"log"
-	"errors")
+)
 
 type Cartridge struct {
 	// Constant for ines headers
@@ -66,8 +68,14 @@ func CreateCartridge(filename string) (Cartridge, error) {
 			copy(c.zeroBuffer[:], rom[11:15])
 
 			// load chr and prg rom data
-			c.prgRom = romNoHeader[0:0x4000 * uint(c.prgRomBlocks)]
-			c.chrRom = romNoHeader[0x4000:0x4000 + (0x2000 * uint(c.chrRomBlocks))]
+			log.Println(c.prgRomBlocks, c.chrRomBlocks)
+			if c.prgRomBlocks > 0 {
+				c.prgRom = romNoHeader[0:0x4000 * uint(c.prgRomBlocks)]
+			}
+
+			if c.chrRomBlocks > 0 {
+				c.chrRom = romNoHeader[0x4000:0x4000 + (0x2000 * uint(c.chrRomBlocks))]
+			}
                         
 		} else {
 			log.Println("This is not a valid NES rom.")
@@ -83,7 +91,10 @@ func (nes *NES) LoadCartridge(cartridge Cartridge) {
 	if uint(cartridge.prgRomBlocks) == 1 {
 		copy(nes.CPU.Memory[0x8000:0xC000], cartridge.prgRom[0:0x4000])
 		copy(nes.CPU.Memory[0xC000:0x10000], cartridge.prgRom[0:0x4000])
-
+	} else if uint(cartridge.prgRomBlocks) == 2 {
+		copy(nes.CPU.Memory[0x8000:0x10000], cartridge.prgRom[0:0x8000])
+	}
+	if cartridge.chrRomBlocks == 1 {
 		copy(nes.PPU.Memory[0:0x2000], cartridge.chrRom[0:0x2000])
 	}
 }

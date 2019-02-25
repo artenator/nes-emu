@@ -102,7 +102,7 @@ func (cpu *Cpu) RunInstruction(instr instruction, doLog bool) {
 			cpu.Memory[0x2006],
 			cpu.Memory[0x2007],)
 	}
-	
+
 	var addr uint16
 	var value uint8
 
@@ -131,7 +131,7 @@ func (cpu *Cpu) RunInstruction(instr instruction, doLog bool) {
 		addr = arg
 		value = cpu.Read8(addr)
 	case absX:
-                arg := cpu.Read16(cpu.PC + 1)
+		arg := cpu.Read16(cpu.PC + 1)
 		addr = arg + uint16(cpu.X)
 		value = cpu.Read8(addr)
 	case absY:
@@ -308,8 +308,14 @@ func (cpu *Cpu) RunInstruction(instr instruction, doLog bool) {
 	case "TYA":
 		cpu.TYA(instr, addr, value)
 	default:
-                log.Fatal(errors.New("Fatal: " + string(instr.assemblyCode) + " is not a valid instruction code."))
+		log.Fatal(errors.New("Fatal: " + string(instr.assemblyCode) + " is not a valid instruction code."))
 	}
+
+	//cpu.totalCycles += uint64(instr.Cycles)
+	//if cpu.totalCycles > 29000 * 3 && !cpu.nes.PPU.PpuReady {
+	//	cpu.nes.PPU.SetVBlank()
+	//	cpu.nes.PPU.PpuReady = true
+	//}
 }
 
 // ADC - Add with Carry
@@ -385,7 +391,7 @@ func (cpu *Cpu) ASL(instr instruction, addr uint16, value uint8) {
 
 	// If acc mode, shift the acc
 	if instr.mode == A {
-                result = cpu.A << 1
+		result = cpu.A << 1
 		cpu.A = result
 	} else {
 		result = value << 1

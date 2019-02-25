@@ -9,6 +9,7 @@ import (
 	"github.com/faiface/pixel/pixelgl"
 	"github.com/shirou/gopsutil/cpu"
 	"golang.org/x/image/colornames"
+	"io"
 	"log"
 	"nes-emu/hardware"
 	"os"
@@ -32,10 +33,19 @@ func drawPixel(c hardware.Color, x, y float64) {
 	imd.Rectangle(0)
 }
 
+func initLogOutput() {
+	logFile, err := os.OpenFile("log.txt", os.O_CREATE | os.O_RDWR, 0666)
+	if err != nil {
+		panic(err)
+	}
+	mw := io.MultiWriter( logFile) // os.Stdout,
+	log.SetOutput(mw)
+}
+
 func runNESInstruction(nes hardware.NES, numOfInstructions *uint, lastFPS int) {
 	opcode := nes.CPU.Read8(nes.CPU.PC)
 	instr := hardware.Instructions[opcode]
-	nes.CPU.RunInstruction(instr, false)
+	nes.CPU.RunInstruction(instr, true)
 	nes.PPU.RunPPUCycles(uint16(3 * instr.Cycles))
 	nes.APU.RunAPUCycles(uint16(instr.Cycles), lastFPS)
 
@@ -44,8 +54,9 @@ func runNESInstruction(nes hardware.NES, numOfInstructions *uint, lastFPS int) {
 
 	*numOfInstructions++
 
-	if inVBlank && NMIEnabled {
-		nes.PPU.ClearVBlank()
+	if inVBlank && NMIEnabled && !nes.PPU.NmiOccurred {
+		//nes.PPU.ClearVBlank()
+		//log.Println("NMI INTERRUPT")
 		nes.CPU.HandleNMI()
 	}
 }
@@ -117,8 +128,6 @@ func run() {
 
 		win.Update()
 
-
-
 		frames++
 
 		select {
@@ -134,6 +143,7 @@ func run() {
 }
 
 func main() {
+	initLogOutput()
 	log.Println("Arte's NES Emu")
 	pixelgl.Run(run)
 }
