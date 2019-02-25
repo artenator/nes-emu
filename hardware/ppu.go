@@ -345,6 +345,12 @@ func (ppu *Ppu) GetColorAtPixel(x, y uint8) Color {
 func (ppu *Ppu) GetColorAtPixelOptimized(x, y uint8, backgroundTile [8][8]uint8, attributeTile [2][2]uint8) Color {
 	var color Color
 
+	color = ppu.getBackgroundColorAtPixelOptimized(x, y, backgroundTile, attributeTile)
+
+	return color
+}
+
+func (ppu *Ppu) testGetSpriteColorAtPixel(x, y uint8) Color {
 	for id, sprite := range ppu.OAM {
 		if sprite.yCoord > 0x00 && sprite.yCoord < 0xEF {
 			// TODO: 8x16 sprites
@@ -358,17 +364,12 @@ func (ppu *Ppu) GetColorAtPixelOptimized(x, y uint8, backgroundTile [8][8]uint8,
 				spriteColor := ppu.getSpriteColorAtPixel(x-sprite.xCoord, y-sprite.yCoord, sprite)
 				if spriteColor.A > 0 {
 					return spriteColor
-				} else {
-					color = ppu.getBackgroundColorAtPixelOptimized(x, y, backgroundTile, attributeTile)
-					return color
 				}
 			}
 		}
 	}
 
-	color = ppu.getBackgroundColorAtPixelOptimized(x, y, backgroundTile, attributeTile)
-
-	return color
+	return Color{}
 }
 
 func (ppu *Ppu) setSpriteHit() {
@@ -387,6 +388,7 @@ func (ppu *Ppu) PPURun() {
 	}
 
 	if ppu.Cycle == 340 && ppu.Scanline < 240 {
+		nameTableY := uint16(ppu.ppuScrollLSB)
 		backgroundTileBase := uint16((ppu.nes.CPU.Memory[0x2000]>>4)&1) * 0x1000
 		backgroundTileOffset := (uint16(0/8) * 32) + (uint16(0/8) % 32)
 		nameTableSelect := ppu.nes.CPU.Memory[0x2000] & 0x03
@@ -398,14 +400,18 @@ func (ppu *Ppu) PPURun() {
 		sl := ppu.Scanline
 		for x := 0; x < 256; x++ {
 			if x%8 == 0 {
-				backgroundTileOffset = (uint16(sl/8) * 32) + (uint16(x/8) % 32)
-				nameTableBase = 0x2000 + uint16(uint16(nameTableSelect)*0x400)
+				nameTableY = sl + uint16(ppu.ppuScrollLSB)
+				backgroundTileOffset = (uint16(nameTableY % 240/8) * 32) + (uint16(x/8) % 32)
+				nameTableBase = (0x2000 + uint16(uint16(nameTableSelect)*0x400) + (nameTableY / 240) * 0x800) & 0x2FFF
 				backgroundTilePos = ppu.Memory[nameTableBase+backgroundTileOffset]
 				backgroundTile = ppu.get8x8Tile(backgroundTileBase, uint16(backgroundTilePos))
-				attributePalettePos = uint8((sl/32)*8) + ((uint8(x) / 32) % 32)
+				attributePalettePos = uint8((nameTableY % 240/32)*8) + ((uint8(x) / 32) % 32)
 				attributeTile = ppu.get2x2Attribute(backgroundTileBase, attributePalettePos)
 			}
-			c := ppu.GetColorAtPixelOptimized(uint8(x), uint8(sl), backgroundTile, attributeTile)
+			c := ppu.testGetSpriteColorAtPixel(uint8(x), uint8(sl))
+			if c.A == 0 {
+				c = ppu.GetColorAtPixelOptimized(uint8(x), uint8(nameTableY % 240), backgroundTile, attributeTile)
+			}
 			ppu.Frame.SetRGBA(x, int(sl), color.RGBA{c.R, c.G, c.B, uint8(c.A)})
 		}
 	}
