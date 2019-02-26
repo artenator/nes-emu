@@ -10,7 +10,7 @@ type Sprite struct {
 func (ppu *Ppu) WriteOAM8(value uint8) {
 	switch ppu.oamAddr % 4 {
 	case 0:
-		ppu.OAM[ppu.oamSpriteAddr%64].yCoord = value
+		ppu.OAM[ppu.oamSpriteAddr%64].yCoord = value + 1
 	case 1:
 		ppu.OAM[ppu.oamSpriteAddr%64].tileNum = value
 	case 2:

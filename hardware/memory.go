@@ -3,6 +3,7 @@ package hardware
 import (
 	"encoding/binary"
 	"log"
+	"strconv"
 )
 
 func (cpu *Cpu) Read8(addr uint16) uint8 {
@@ -77,6 +78,7 @@ func (cpu *Cpu) Write8(addr uint16, value uint8) {
 		if truncAddr == 0x2005 {
 			cpu.nes.PPU.setPpuScrollAddr(value)
 			log.Printf("writing to ppuscroll 0x%x", value)
+			log.Println(strconv.FormatInt(int64(cpu.Memory[0x2000]), 2))
 			//log.Printf("+%v", cpu.nes.PPU.Memory[0x2000:0x3000])
 		}
 	} else {
@@ -103,6 +105,7 @@ func (cpu *Cpu) Write8(addr uint16, value uint8) {
 			for _, b := range cpu.Memory[0x200:0x300] {
 				cpu.nes.PPU.WriteOAM8(b)
 			}
+			log.Printf("OAM %+v", cpu.nes.PPU.OAM)
 			cpu.nes.PPU.SetOamAddr(0)
 			cpu.nes.PPU.oamSpriteAddr = 0
 
