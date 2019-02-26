@@ -174,7 +174,7 @@ func (ppu *Ppu) get8x16Tile(base uint16, pos uint16) [16][8]uint8 {
 func (ppu *Ppu) get2x2Attribute(base uint16, pos uint8) [2][2]uint8 {
 	var result [2][2]uint8
 
-	b := ppu.Memory[0x2000+0x3C0+uint16(pos)]
+	b := ppu.Memory[base+0x3C0+uint16(pos)]
 
 	result[0][0] = b & 0x03
 	result[0][1] = (b & 0x0C) >> 2
@@ -406,7 +406,7 @@ func (ppu *Ppu) PPURun() {
 				backgroundTilePos = ppu.Memory[nameTableBase+backgroundTileOffset]
 				backgroundTile = ppu.get8x8Tile(backgroundTileBase, uint16(backgroundTilePos))
 				attributePalettePos = uint8((nameTableY % 240/32)*8) + ((uint8(x) / 32) % 32)
-				attributeTile = ppu.get2x2Attribute(backgroundTileBase, attributePalettePos)
+				attributeTile = ppu.get2x2Attribute(nameTableBase, attributePalettePos)
 			}
 			c := ppu.testGetSpriteColorAtPixel(uint8(x), uint8(sl))
 			if c.A == 0 {
