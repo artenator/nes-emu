@@ -54,7 +54,7 @@ func (ppu *Ppu) DataRead() uint8 {
 	ppuAddressArr := []uint8{ppu.ppuAddrMSB, ppu.ppuAddrLSB}
 	ppuWriteAddress := binary.BigEndian.Uint16(ppuAddressArr)
 
-	absReadAddress := (ppuWriteAddress+ppu.ppuAddrOffset) & 0x3FFF - 1
+	absReadAddress := ((ppuWriteAddress+ppu.ppuAddrOffset) - 1) % 0x3FFF
 
 	//log.Printf("reading ppu 0x%x, value: 0x%x, OFFSET: %d", absReadAddress, ppu.Read8(absReadAddress), ppu.ppuAddrOffset)
 
@@ -414,6 +414,10 @@ func (ppu *Ppu) PPURun() {
 			}
 			ppu.Frame.SetRGBA(x, int(sl), color.RGBA{c.R, c.G, c.B, uint8(c.A)})
 		}
+	}
+
+	if ppu.Scanline >= 257 && ppu.Scanline <= 320 {
+		ppu.SetOamAddr(0)
 	}
 
 	if ppu.Scanline == 259 && ppu.Cycle == 340 {
