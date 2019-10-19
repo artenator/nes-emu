@@ -1,10 +1,16 @@
 package hardware
 
+import "fmt"
+
 type Sprite struct {
 	yCoord     uint8
 	tileNum    uint8
 	attributes uint8
 	xCoord     uint8
+}
+
+func (sprite Sprite) String() string {
+	return fmt.Sprintf("{ycoord: %x tileNum: %x attributes: %x xCoord: %x}", sprite.yCoord, sprite.tileNum, sprite.attributes, sprite.xCoord)
 }
 
 func (ppu *Ppu) WriteOAM8(value uint8) {

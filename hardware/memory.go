@@ -45,6 +45,10 @@ func (cpu *Cpu) Read16(addr uint16) uint16 {
 func (cpu *Cpu) Write8(addr uint16, value uint8) {
 	if addr < 0x2000 {
 		cpu.Memory[addr&0x7FF] = value
+
+		if addr&0x7FF >= 0x200 && addr&0x7FF <= 0x2FF && value == 0xA0 {
+			log.Println("A0 written!")
+		}
 	} else if addr >= 0x2000 && addr < 0x4000 {
 		truncAddr := addr & 0x2007
 
@@ -103,10 +107,14 @@ func (cpu *Cpu) Write8(addr uint16, value uint8) {
 		} else if addr == 0x4014 {
 			// write all the sprites to oam
 			startPos := uint16(value) << 8
-			for _, b := range cpu.Memory[startPos:startPos + 0x100] {
-				cpu.nes.PPU.WriteOAM8(b)
+			log.Printf("start pos is %x", startPos)
+			for idx, _ := range cpu.Memory[startPos:startPos + 0x100] {
+				byteRead := cpu.Read8(startPos+uint16(idx))
+
+				cpu.nes.PPU.WriteOAM8(byteRead)
 			}
-			log.Printf("OAM %+v", cpu.nes.PPU.OAM)
+			//log.Printf("OAM %+v", cpu.nes.PPU.OAM)
+			log.Printf("OAM %s", cpu.nes.PPU.OAM)
 			cpu.nes.PPU.SetOamAddr(0)
 			cpu.nes.PPU.oamSpriteAddr = 0
 
