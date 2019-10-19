@@ -1,0 +1,7 @@
+awk '{print "A:"$12 " PC:"toupper($3)}' log.txt > log-clean.txt
+
+diff -y log-clean.txt ice-climbers-cleaned.log > diff.log
+
+
+//storing ppu tiles in ram
+C71B $91 $00     STA ($00),Y @ $0400
