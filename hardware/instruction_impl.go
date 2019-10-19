@@ -332,11 +332,7 @@ func (cpu *Cpu) RunInstruction(instr instruction, doLog bool) {
 		log.Fatal(errors.New("Fatal: " + string(instr.assemblyCode) + " is not a valid instruction code."))
 	}
 
-	//cpu.totalCycles += uint64(instr.Cycles)
-	//if cpu.totalCycles > 29000 * 3 && !cpu.nes.PPU.PpuReady {
-	//	cpu.nes.PPU.SetVBlank()
-	//	cpu.nes.PPU.PpuReady = true
-	//}
+	cpu.totalCycles += uint64(instr.Cycles)
 }
 
 func (cpu *Cpu) getValue(addressingMode uint8, addr uint16, arg uint8) uint8 {

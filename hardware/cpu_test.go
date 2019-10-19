@@ -60,7 +60,6 @@ func readLines(path string) ([]expectedState, error) {
 
 func TestCpu(t *testing.T) {
 	// create new nes
-	//cpu := hardware.Cpu{}
 	nes := NewNES()
 
 	cart, err := CreateCartridge("nestest.nes")
