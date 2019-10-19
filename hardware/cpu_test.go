@@ -8,7 +8,6 @@ import (
 	"strconv"
 	"strings"
 	"testing"
-	"time"
 )
 
 type expectedState struct {
@@ -109,19 +108,7 @@ func TestCpu(t *testing.T) {
 
 		nes.CPU.RunInstruction(Instructions[opcode], false)
 
-		time.Sleep(500 * time.Nanosecond)
-
 		numOfInstructions++
-
-
-
-		if numOfInstructions % 100 == 0 {
-			if (nes.CPU.Memory[0x2002] >> 7) & 1 == 0 {
-				//nes.PPU.setVBlank()
-			} else {
-				//nes.PPU.clearVBlank()
-			}
-		}
 
 		opcode = nes.CPU.Read8(nes.CPU.PC)
 	}

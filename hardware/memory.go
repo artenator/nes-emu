@@ -54,10 +54,6 @@ func (cpu *Cpu) Write8(addr uint16, value uint8) {
 
 		cpu.Memory[truncAddr] = value
 
-		if truncAddr == 0x2000 {
-			//log.Printf("writing to PPUCTRL %s", strconv.FormatInt(int64(value), 2))
-		}
-
 		// PPUMASK
 		if truncAddr == 0x2001 {
 			cpu.nes.PPU.ppumask.setValues(value)

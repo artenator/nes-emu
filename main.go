@@ -55,8 +55,6 @@ func runNESInstruction(nes hardware.NES, numOfInstructions *uint, lastFPS int) {
 	*numOfInstructions++
 
 	if inVBlank && NMIEnabled && !nes.PPU.NmiOccurred {
-		//nes.PPU.ClearVBlank()
-		//log.Println("NMI INTERRUPT")
 		nes.CPU.HandleNMI()
 	}
 }
@@ -65,9 +63,6 @@ func runNEStoFrame(nes hardware.NES, numOfInstructions *uint, lastFPS int) {
 	for !nes.PPU.FrameReady {
 		runNESInstruction(nes, numOfInstructions, lastFPS)
 	}
-
-	//log.Printf("%+v", nes.APU.GetPulseFrequency(0x4000))
-	//log.Printf("%+v", nes.APU.GetPulseFrequency(0x4004))
 
 	nes.PPU.FrameReady = false
 }
@@ -133,7 +128,6 @@ func run() {
 		select {
 		case <-second:
 			win.SetTitle(fmt.Sprintf("FPS: %d %s", frames, cfg.Title))
-			//nes.APU.Cyclelimit = uint8(29829 * frames / 44100)
 			lastFPS = frames
 			frames = 0
 		default:
