@@ -329,7 +329,7 @@ func (cpu *Cpu) RunInstruction(instr instruction, doLog bool) {
 	case "TYA":
 		cpu.TYA()
 	default:
-		log.Fatal(errors.New("Fatal: " + string(instr.assemblyCode) + " is not a valid instruction code."))
+		//log.Fatal(errors.New("Fatal: " + string(instr.assemblyCode) + " is not a valid instruction code."))
 	}
 
 	cpu.totalCycles += uint64(instr.Cycles)

@@ -125,7 +125,6 @@ func (cpu *Cpu) Write8(addr uint16, value uint8) {
 		} else if addr == 0x4017 {
 			cpu.nes.APU.setFrameCounterValues(value)
 		} else if addr >= 0x6000 && addr <= 0x6005 {
-			log.Printf("TEST RESULTS: %x, %d", addr, value)
 		}
 	}
 }

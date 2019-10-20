@@ -97,6 +97,9 @@ func run() {
 		nes.CPU.Reset()
 	}
 
+	// initialize the apu
+	nes.APU.InitAPU(true)
+
 	var (
 		numOfInstructions uint = 0
 		frames = 0

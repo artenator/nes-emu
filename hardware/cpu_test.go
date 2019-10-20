@@ -112,3 +112,141 @@ func TestCpu(t *testing.T) {
 		opcode = nes.CPU.Read8(nes.CPU.PC)
 	}
 }
+
+func runBlarggTest(filename string) string {
+	nes := NewNES()
+
+	cart, err := CreateCartridge(filename)
+
+	if err != nil {
+		log.Println(err)
+	} else {
+		nes.LoadCartridge(cart)
+	}
+
+	nes.CPU.Reset();
+
+	nes.APU.InitAPU(false)
+
+	opcode := nes.CPU.Read8(nes.CPU.PC)
+
+	log.Printf("%+v", nes.CPU.PC)
+
+	testStarted := false
+
+	for !testStarted {
+		nes.CPU.RunInstruction(Instructions[opcode], false)
+		opcode = nes.CPU.Read8(nes.CPU.PC)
+
+		if nes.CPU.Memory[0x6000] == 0x80 {
+			testStarted = true
+		}
+
+		if nes.CPU.Memory[0x6000] == 0x81 {
+			nes.CPU.Reset()
+		}
+	}
+
+	for nes.CPU.Memory[0x6000] > 0x7F {
+		nes.CPU.RunInstruction(Instructions[opcode], false)
+		opcode = nes.CPU.Read8(nes.CPU.PC)
+
+		if nes.CPU.Memory[0x6000] == 0x81 {
+			nes.CPU.Reset()
+		}
+	}
+
+	var testMsgByteArr []byte
+	curIdx := 0x6004
+	curByte := nes.CPU.Memory[curIdx]
+
+	for curByte != 0 {
+		testMsgByteArr = append(testMsgByteArr, curByte)
+		curIdx++
+		curByte = nes.CPU.Memory[curIdx]
+	}
+
+	return string(testMsgByteArr)
+}
+
+func TestBlarggCpu01(t *testing.T) {
+	// create new nes
+
+	resultMsg := runBlarggTest("./blargg_cpu_singles/01-basics.nes")
+
+	if !strings.Contains(strings.ToUpper(resultMsg), "PASSED") {
+		t.Errorf("Blargg Test did not pass\nMESSAGE: %s", resultMsg)
+	}
+}
+
+func TestBlarggCpu02(t *testing.T) {
+
+	resultMsg := runBlarggTest("./blargg_cpu_singles/02-implied.nes")
+
+	if !strings.Contains(strings.ToUpper(resultMsg), "PASSED") {
+		t.Errorf("Blargg Test did not pass\nMESSAGE: %s", resultMsg)
+	}
+}
+
+func TestBlarggCpu03(t *testing.T) {
+
+	resultMsg := runBlarggTest("./blargg_cpu_singles/03-immediate.nes")
+
+	if !strings.Contains(strings.ToUpper(resultMsg), "PASSED") {
+		t.Errorf("Blargg Test did not pass\nMESSAGE: %s", resultMsg)
+	}
+}
+
+func TestBlarggCpu04(t *testing.T) {
+
+	resultMsg := runBlarggTest("./blargg_cpu_singles/04-zero_page.nes")
+
+	if !strings.Contains(strings.ToUpper(resultMsg), "PASSED") {
+		t.Errorf("Blargg Test did not pass\nMESSAGE: %s", resultMsg)
+	}
+}
+
+func TestBlarggCpu05(t *testing.T) {
+
+	resultMsg := runBlarggTest("./blargg_cpu_singles/05-zp_xy.nes")
+
+	if !strings.Contains(strings.ToUpper(resultMsg), "PASSED") {
+		t.Errorf("Blargg Test did not pass\nMESSAGE: %s", resultMsg)
+	}
+}
+
+func TestBlarggCpu06(t *testing.T) {
+
+	resultMsg := runBlarggTest("./blargg_cpu_singles/06-absolute.nes")
+
+	if !strings.Contains(strings.ToUpper(resultMsg), "PASSED") {
+		t.Errorf("Blargg Test did not pass\nMESSAGE: %s", resultMsg)
+	}
+}
+
+func TestBlarggCpu07(t *testing.T) {
+
+	resultMsg := runBlarggTest("./blargg_cpu_singles/07-abs_xy.nes")
+
+	if !strings.Contains(strings.ToUpper(resultMsg), "PASSED") {
+		t.Errorf("Blargg Test did not pass\nMESSAGE: %s", resultMsg)
+	}
+}
+
+func TestBlarggCpu08(t *testing.T) {
+
+	resultMsg := runBlarggTest("./blargg_cpu_singles/08-ind_x.nes")
+
+	if !strings.Contains(strings.ToUpper(resultMsg), "PASSED") {
+		t.Errorf("Blargg Test did not pass\nMESSAGE: %s", resultMsg)
+	}
+}
+
+func TestBlarggCpu09(t *testing.T) {
+
+	resultMsg := runBlarggTest("./blargg_cpu_singles/09-ind_y.nes")
+
+	if !strings.Contains(strings.ToUpper(resultMsg), "PASSED") {
+		t.Errorf("Blargg Test did not pass\nMESSAGE: %s", resultMsg)
+	}
+}

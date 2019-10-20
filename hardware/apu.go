@@ -8,7 +8,8 @@ import (
 type Apu struct {
 	nes *NES
 
-	// audio device
+	// audio device and context
+	audioContext *oto.Context
 	audioDevice *oto.Player
 
 	// cycle counter
@@ -119,12 +120,14 @@ var lengthTable = [32]uint8{
 	12, 16, 24, 18, 48, 20, 96, 22, 192, 24, 72, 26, 16, 28, 32, 30,
 }
 
-func (apu *Apu) InitAPU() {
+func (apu *Apu) InitAPU(initContext bool) {
 	// init audio player
 	apu.Cyclelimit = 40
 	var err error
-	if apu.audioDevice, err = oto.NewPlayer(44100, 1, 1, 4096); err != nil {
-		log.Fatal("Audio could not be initialized")
+	if initContext {
+		if apu.audioDevice, err = oto.NewPlayer(44100, 1, 1, 4096); err != nil {
+			log.Fatal("Audio could not be initialized")
+		}
 	}
 	apu.enableDMC = false
 	apu.enableNoise = false

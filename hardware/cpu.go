@@ -65,9 +65,6 @@ func (cpu *Cpu) Reset() {
 
 	cpu.setCpuInitialState()
 
-	// initialize the apu
-	cpu.nes.APU.InitAPU()
-
 	// print the whole CPU and memory!!
 	//log.Printf("%+v\n", cpu)
 }
