@@ -39,8 +39,22 @@ type Cartridge struct {
 
 	// actual chrRom data
 	chrRom []byte
+
+	//Mapper type
+	mapperType byte
 }
 
+const (
+	mapper0 = iota
+	mmc1 = iota
+)
+
+func (c *Cartridge) setMapperType() {
+	mapperLow := (c.flags6 & 0xF0) >> 4
+	mapperHigh := c.flags7 & 0xF0
+
+	c.mapperType = mapperHigh | mapperLow
+}
 
 func CreateCartridge(filename string) (Cartridge, error) {
 	// Read nes rom into memory
@@ -67,6 +81,9 @@ func CreateCartridge(filename string) (Cartridge, error) {
 			c.flags10 = rom[10]
 			copy(c.zeroBuffer[:], rom[11:15])
 
+			c.setMapperType()
+			log.Printf("Mapper type %d", c.mapperType)
+
 			// load chr and prg rom data
 			log.Println(c.prgRomBlocks, c.chrRomBlocks)
 			if c.prgRomBlocks > 0 {
@@ -87,14 +104,19 @@ func CreateCartridge(filename string) (Cartridge, error) {
 }
 
 func (nes *NES) LoadCartridge(cartridge Cartridge) {
-	// if there's only one 16KB prg slot, mirror it in the cpu memory
-	if uint(cartridge.prgRomBlocks) == 1 {
-		copy(nes.CPU.Memory[0x8000:0xC000], cartridge.prgRom[0:0x4000])
-		copy(nes.CPU.Memory[0xC000:0x10000], cartridge.prgRom[0:0x4000])
-	} else if uint(cartridge.prgRomBlocks) == 2 {
-		copy(nes.CPU.Memory[0x8000:0x10000], cartridge.prgRom[0:0x8000])
-	}
-	if cartridge.chrRomBlocks == 1 {
-		copy(nes.PPU.Memory[0:0x2000], cartridge.chrRom[0:0x2000])
+	switch cartridge.mapperType {
+	case mapper0:
+		// if there's only one 16KB prg slot, mirror it in the cpu memory
+		if uint(cartridge.prgRomBlocks) == 1 {
+			copy(nes.CPU.Memory[0x8000:0xC000], cartridge.prgRom[0:0x4000])
+			copy(nes.CPU.Memory[0xC000:0x10000], cartridge.prgRom[0:0x4000])
+		} else if uint(cartridge.prgRomBlocks) == 2 {
+			copy(nes.CPU.Memory[0x8000:0x10000], cartridge.prgRom[0:0x8000])
+		}
+		if cartridge.chrRomBlocks == 1 {
+			copy(nes.PPU.Memory[0:0x2000], cartridge.chrRom[0:0x2000])
+		}
+	default:
+		log.Fatalf("Unsupported mapper %d", cartridge.mapperType)
 	}
 }
