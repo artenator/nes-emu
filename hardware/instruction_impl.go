@@ -88,11 +88,15 @@ func (cpu *Cpu) doRelativeBranch(value uint8) {
 }
 
 func (cpu *Cpu) RunInstruction(instr instruction, doLog bool) {
+	var instrByteArr []byte
+	for i := uint8(0); i < instr.bytes; i++ {
+		instrByteArr = append(instrByteArr, cpu.Read8(cpu.PC + uint16(i)))
+	}
 	if doLog {
 		log.Printf("%x %+v %x PC:%x A: %x SP: %x X: %x Y: %x P: %x PPUADDR: %x PPUDATA: %x",
 			cpu.PC,
 			instr,
-			cpu.Memory[cpu.PC : cpu.PC + 1 + uint16(instr.bytes) - 1],
+			instrByteArr,
 			cpu.PC,
 			cpu.A,
 			cpu.SP,

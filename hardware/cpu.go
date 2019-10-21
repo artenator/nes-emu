@@ -58,7 +58,6 @@ func (cpu *Cpu) setCpuInitialState() {
 func (cpu *Cpu) Reset() {
 	// Read first instruction address location
 	firstInstruction := cpu.Read16(0xFFFC)
-	//firstInstruction := uint16(0xCAEA)
 
 	// Set the PC to be at the address
 	cpu.PC = firstInstruction

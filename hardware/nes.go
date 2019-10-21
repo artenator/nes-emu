@@ -5,12 +5,14 @@ import (
 )
 
 type NES struct {
-	CPU *Cpu
-	PPU *Ppu
-	APU *Apu
+	CPU  *Cpu
+	PPU  *Ppu
+	APU  *Apu
+	CART *Cartridge
+	CARTIO CartridgeIO
 }
 
-func NewNES() NES {
+func NewNES() *NES {
 	newNes := NES{}
 	newNes.CPU = &Cpu{}
 	newNes.PPU = &Ppu{}
@@ -21,7 +23,5 @@ func NewNES() NES {
 	newNes.APU.nes = &newNes
 	newNes.PPU.ppuAddrCounter = 0
 
-
-
-	return newNes
+	return &newNes
 }

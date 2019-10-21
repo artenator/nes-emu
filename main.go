@@ -38,7 +38,7 @@ func initLogOutput() {
 	if err != nil {
 		panic(err)
 	}
-	mw := io.MultiWriter( logFile) // os.Stdout,
+	mw := io.MultiWriter(logFile) // os.Stdout,
 	log.SetOutput(mw)
 }
 
@@ -114,7 +114,7 @@ func run() {
 
 		nes.CPU.CheckControllerPresses(win)
 
-		runNEStoFrame(nes, &numOfInstructions, lastFPS)
+		runNEStoFrame(*nes, &numOfInstructions, lastFPS)
 
 		pic := pixel.PictureDataFromImage(nes.PPU.Frame)
 

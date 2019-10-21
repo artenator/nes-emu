@@ -24,6 +24,8 @@ func (cpu *Cpu) Read8(addr uint16) uint8 {
 		val := (cpu.Controller >> (7 - (cpu.ControllerIdx % 8))) & 1
 		cpu.ControllerIdx++
 		return val
+	} else if addr >= 0x6000 {
+		return cpu.nes.CARTIO.read8(addr)
 	} else {
 		return cpu.Memory[addr]
 	}
@@ -37,6 +39,8 @@ func (cpu *Cpu) Read16(addr uint16) uint16 {
 		return binary.LittleEndian.Uint16(cpu.Memory[addr&0x7FF : (uint32(addr)&0x7FF)+2])
 	} else if addr >= 0x2000 && addr < 0x4000 {
 		return binary.LittleEndian.Uint16(cpu.Memory[addr&0x2007 : (uint32(addr)&0x2007)+2])
+	} else if addr >= 0x6000 {
+		return cpu.nes.CARTIO.read16(addr)
 	} else {
 		return binary.LittleEndian.Uint16(cpu.Memory[addr : uint32(addr)+2])
 	}
@@ -45,10 +49,6 @@ func (cpu *Cpu) Read16(addr uint16) uint16 {
 func (cpu *Cpu) Write8(addr uint16, value uint8) {
 	if addr < 0x2000 {
 		cpu.Memory[addr&0x7FF] = value
-
-		if addr&0x7FF >= 0x200 && addr&0x7FF <= 0x2FF && value == 0xA0 {
-			log.Println("A0 written!")
-		}
 	} else if addr >= 0x2000 && addr < 0x4000 {
 		truncAddr := addr & 0x2007
 
@@ -124,7 +124,8 @@ func (cpu *Cpu) Write8(addr uint16, value uint8) {
 			}
 		} else if addr == 0x4017 {
 			cpu.nes.APU.setFrameCounterValues(value)
-		} else if addr >= 0x6000 && addr <= 0x6005 {
+		} else if addr >= 0x6000 {
+			cpu.nes.CARTIO.write8(addr, value)
 		}
 	}
 }

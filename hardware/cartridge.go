@@ -7,6 +7,8 @@ import (
 )
 
 type Cartridge struct {
+	nes *NES
+
 	// Constant for ines headers
 	nesLabel [4]byte
 
@@ -42,7 +44,17 @@ type Cartridge struct {
 
 	//Mapper type
 	mapperType byte
+
+	//Mirroring style
+	mirrorStyle byte
 }
+
+const (
+	horizontal = iota
+	vertical = iota
+	singleScreen = iota
+	fourScreen = iota
+)
 
 const (
 	mapper0 = iota
@@ -104,18 +116,20 @@ func CreateCartridge(filename string) (Cartridge, error) {
 }
 
 func (nes *NES) LoadCartridge(cartridge Cartridge) {
+	nes.CART = &cartridge
+	nes.CART.nes = nes
+
 	switch cartridge.mapperType {
 	case mapper0:
-		// if there's only one 16KB prg slot, mirror it in the cpu memory
-		if uint(cartridge.prgRomBlocks) == 1 {
-			copy(nes.CPU.Memory[0x8000:0xC000], cartridge.prgRom[0:0x4000])
-			copy(nes.CPU.Memory[0xC000:0x10000], cartridge.prgRom[0:0x4000])
-		} else if uint(cartridge.prgRomBlocks) == 2 {
-			copy(nes.CPU.Memory[0x8000:0x10000], cartridge.prgRom[0:0x8000])
-		}
-		if cartridge.chrRomBlocks == 1 {
-			copy(nes.PPU.Memory[0:0x2000], cartridge.chrRom[0:0x2000])
-		}
+		mapper := &Mapper0CIO{}
+		mapper.initCartIO(&cartridge)
+		nes.CARTIO = mapper
+	case mmc1:
+		mapper := &Mapper1CIO{}
+		mapper.initCartIO(&cartridge)
+		nes.CARTIO = mapper
+		//copy(nes.PPU.Memory[0:0x2000], cartridge.chrRom[0:0x2000])
+
 	default:
 		log.Fatalf("Unsupported mapper %d", cartridge.mapperType)
 	}

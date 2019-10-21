@@ -4,6 +4,7 @@ import (
 	"encoding/binary"
 	"image"
 	"image/color"
+	"log"
 )
 
 type Ppu struct {
@@ -54,9 +55,9 @@ func (ppu *Ppu) DataRead() uint8 {
 	ppuAddressArr := []uint8{ppu.ppuAddrMSB, ppu.ppuAddrLSB}
 	ppuWriteAddress := binary.BigEndian.Uint16(ppuAddressArr)
 
-	absReadAddress := ((ppuWriteAddress+ppu.ppuAddrOffset) - 1) % 0x3FFF
+	absReadAddress := ((ppuWriteAddress+ppu.ppuAddrOffset) - 1) % 0x3FFF - 1
 
-	//log.Printf("reading ppu 0x%x, value: 0x%x, OFFSET: %d", absReadAddress, ppu.Read8(absReadAddress), ppu.ppuAddrOffset)
+	log.Printf("reading ppu 0x%x, value: 0x%x, OFFSET: %d", absReadAddress, ppu.Read8(absReadAddress), ppu.ppuAddrOffset)
 
 	ppu.incrementAddress()
 
@@ -81,7 +82,7 @@ func (ppu *Ppu) Write8(value uint8) {
 		ppu.Memory[absWriteAddress - 0x400] = value
 	}
 
-	//log.Printf("writing ppu 0x%x, value: 0x%x, OFFSET: %d", absWriteAddress, ppu.Read8(absWriteAddress), ppu.ppuAddrOffset)
+	log.Printf("writing ppu 0x%x, value: 0x%x, OFFSET: %d", absWriteAddress, ppu.Read8(absWriteAddress), ppu.ppuAddrOffset)
 
 	ppu.incrementAddress()
 }
@@ -96,7 +97,7 @@ func (ppu *Ppu) incrementAddress() {
 }
 
 func (ppu *Ppu) Read8(addr uint16) uint8 {
-	return ppu.Memory[addr]
+	return ppu.nes.CARTIO.read8(addr)
 }
 
 func (ppu *Ppu) setPpuAddr(addr uint8) {
