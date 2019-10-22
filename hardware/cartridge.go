@@ -98,12 +98,15 @@ func CreateCartridge(filename string) (Cartridge, error) {
 
 			// load chr and prg rom data
 			log.Println(c.prgRomBlocks, c.chrRomBlocks)
+
+			prgEndAddr := 0x4000 * uint(c.prgRomBlocks)
+
 			if c.prgRomBlocks > 0 {
-				c.prgRom = romNoHeader[0:0x4000 * uint(c.prgRomBlocks)]
+				c.prgRom = romNoHeader[0:prgEndAddr]
 			}
 
 			if c.chrRomBlocks > 0 {
-				c.chrRom = romNoHeader[0x4000:0x4000 + (0x2000 * uint(c.chrRomBlocks))]
+				c.chrRom = romNoHeader[prgEndAddr:prgEndAddr + (0x2000 * uint(c.chrRomBlocks))]
 			}
                         
 		} else {
@@ -124,6 +127,7 @@ func (nes *NES) LoadCartridge(cartridge Cartridge) {
 		mapper := &Mapper0CIO{}
 		mapper.initCartIO(&cartridge)
 		nes.CARTIO = mapper
+		//copy(nes.PPU.Memory[0:0x2000], cartridge.chrRom[0:0x2000])
 	case mmc1:
 		mapper := &Mapper1CIO{}
 		mapper.initCartIO(&cartridge)

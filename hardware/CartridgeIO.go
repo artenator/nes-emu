@@ -86,7 +86,7 @@ type Mapper1CIO struct {
 	//CCCCC
 	//|||||
 	//+++++- Select 4 KB or 8 KB CHR bank at PPU $0000 (low bit ignored in 8 KB mode)
-	chrBank1 byte
+	chrBank0 byte
 
 	//CHR bank 1 (internal, $C000-$DFFF)
 	//4bit0
@@ -94,7 +94,7 @@ type Mapper1CIO struct {
 	//CCCCC
 	//|||||
 	//+++++- Select 4 KB CHR bank at PPU $1000 (ignored in 8 KB mode)
-	chrBank2 byte
+	chrBank1 byte
 
 	//PRG bank (internal, $E000-$FFFF)
 	//	//4bit0
@@ -133,27 +133,38 @@ func (m *Mapper1CIO) initCartIO(cartridge *Cartridge) {
 }
 
 func (m *Mapper1CIO) read8(addr uint16) uint8 {
-	if addr >= 0x8000 {
+	if addr < 0x2000 {
+		switch m.chrRomBankMode {
+		case chrBankMode0:
+			//baseAddrIdx := m.chrBank0 & 0x1F
+			return m.cartridge.nes.PPU.Memory[addr]
+		case chrBankMode1:
+			//baseAddrIdx := m.chrBank0 & 0x1E
+			return m.cartridge.nes.PPU.Memory[addr]
+		}
+	} else if addr >= 0x6000 && addr < 0x8000 {
+		return m.cartridge.nes.CPU.Memory[addr]
+	} else if addr >= 0x8000 {
 		switch m.prgRomBankMode {
 		case prgBankMode0, prgBankMode1:
 			truncOffsetAddr := addr & 0x7FFF
 			baseAddrIdx := m.prgBank & 0xE // ignore last bit in 32kb mode
-			return m.cartridge.prgRom[uint16(baseAddrIdx % m.cartridge.prgRomBlocks) * 0x4000 + truncOffsetAddr]
+			return m.cartridge.prgRom[uint32(baseAddrIdx % m.cartridge.prgRomBlocks) * 0x4000 + uint32(truncOffsetAddr)]
 		case prgBankMode2:
 			truncOffsetAddr := addr & 0x7FFF
 			if truncOffsetAddr < 0x4000 {
 				return m.cartridge.prgRom[truncOffsetAddr]
 			} else {
 				baseAddrIdx := m.prgBank & 0xF
-				return m.cartridge.prgRom[uint16(baseAddrIdx % m.cartridge.prgRomBlocks) * 0x4000 + truncOffsetAddr]
+				return m.cartridge.prgRom[uint32(baseAddrIdx % m.cartridge.prgRomBlocks) * 0x4000 + uint32(truncOffsetAddr & 0x3FFF)]
 			}
 		case prgBankMode3:
 			truncOffsetAddr := addr & 0x7FFF
 			if truncOffsetAddr < 0x4000 {
 				baseAddrIdx := m.prgBank & 0xF
-				return m.cartridge.prgRom[uint16(baseAddrIdx % m.cartridge.prgRomBlocks) * 0x4000 + truncOffsetAddr]
+				return m.cartridge.prgRom[uint32(baseAddrIdx % m.cartridge.prgRomBlocks) * 0x4000 + uint32(truncOffsetAddr)]
 			} else {
-				return m.cartridge.prgRom[uint16(m.cartridge.prgRomBlocks - 1) * 0x4000 + truncOffsetAddr]
+				return m.cartridge.prgRom[uint32(m.cartridge.prgRomBlocks - 1) * 0x4000 + uint32(truncOffsetAddr & 0x3FFF)]
 			}
 		default:
 			log.Fatalf("Invalid prg bank mode %d", m.prgRomBankMode)
@@ -165,30 +176,29 @@ func (m *Mapper1CIO) read8(addr uint16) uint8 {
 func (m *Mapper1CIO) read16(addr uint16) uint16 {
 	if addr >= 0x8000 {
 		switch m.prgRomBankMode {
-		case prgBankMode0:
-		case prgBankMode1:
+		case prgBankMode0, prgBankMode1:
 			truncOffsetAddr := addr & 0x7FFF
 			baseAddrIdx := m.prgBank & 0xE // ignore last bit in 32kb mode
-			baseAddr := uint16(baseAddrIdx % m.cartridge.prgRomBlocks) * 0x4000
-			return binary.LittleEndian.Uint16(m.cartridge.prgRom[baseAddr + truncOffsetAddr : baseAddr + truncOffsetAddr + 2])
+			baseAddr := uint32(baseAddrIdx % m.cartridge.prgRomBlocks) * 0x4000
+			return binary.LittleEndian.Uint16(m.cartridge.prgRom[baseAddr + uint32(truncOffsetAddr) : baseAddr + uint32(truncOffsetAddr) + 2])
 		case prgBankMode2:
 			truncOffsetAddr := addr & 0x7FFF
 			if truncOffsetAddr < 0x4000 {
 				return binary.LittleEndian.Uint16(m.cartridge.prgRom[truncOffsetAddr : truncOffsetAddr + 2])
 			} else {
 				baseAddrIdx := m.prgBank & 0xF
-				baseAddr := uint16(baseAddrIdx % m.cartridge.prgRomBlocks) * 0x4000
-				return binary.LittleEndian.Uint16(m.cartridge.prgRom[baseAddr + truncOffsetAddr : baseAddr + truncOffsetAddr + 2])
+				baseAddr := uint32(baseAddrIdx % m.cartridge.prgRomBlocks) * 0x4000
+				return binary.LittleEndian.Uint16(m.cartridge.prgRom[baseAddr + uint32(truncOffsetAddr & 0x3FFF) : baseAddr + uint32(truncOffsetAddr & 0x3FFF) + 2])
 			}
 		case prgBankMode3:
 			truncOffsetAddr := addr & 0x7FFF
 			if truncOffsetAddr < 0x4000 {
 				baseAddrIdx := m.prgBank & 0xF
-				baseAddr := uint16(baseAddrIdx % m.cartridge.prgRomBlocks) * 0x4000
-				return binary.LittleEndian.Uint16(m.cartridge.prgRom[baseAddr + truncOffsetAddr : baseAddr + truncOffsetAddr + 2])
+				baseAddr := uint32(baseAddrIdx % m.cartridge.prgRomBlocks) * 0x4000
+				return binary.LittleEndian.Uint16(m.cartridge.prgRom[baseAddr + uint32(truncOffsetAddr) : baseAddr + uint32(truncOffsetAddr) + 2])
 			} else {
-				baseAddr := uint16(m.cartridge.prgRomBlocks - 1) * 0x4000
-				return binary.LittleEndian.Uint16(m.cartridge.prgRom[baseAddr + truncOffsetAddr : baseAddr + truncOffsetAddr + 2])
+				baseAddr := uint32(m.cartridge.prgRomBlocks - 1) * 0x4000
+				return binary.LittleEndian.Uint16(m.cartridge.prgRom[baseAddr + uint32(truncOffsetAddr & 0x3FFF) : baseAddr + uint32(truncOffsetAddr & 0x3FFF) + 2])
 			}
 		default:
 			log.Fatalf("Invalid prg bank mode %d", m.prgRomBankMode)
@@ -223,14 +233,17 @@ func (m *Mapper1CIO) setRegister(addr uint16, regValue byte) {
 		m.controlBank = regValue
 		m.setMirrorStyle()
 		m.setBankModes()
-		log.Printf("Setting Control Register for MMC1 %x", regValue)
-		log.Printf("Bank Modes: chr %x prg %x", m.chrRomBankMode, m.prgRomBankMode)
+		//log.Printf("Setting Control Register for MMC1 %x", regValue)
+		//log.Printf("Bank Modes: chr %x prg %x", m.chrRomBankMode, m.prgRomBankMode)
 	} else if addr >= 0xA000 && addr < 0xC000 {
-		m.chrBank1 = regValue
+		m.chrBank0 = regValue
+		//log.Printf("Setting ChrBank1 Register for MMC1 %x", regValue)
 	} else if addr >= 0xC000 && addr < 0xE000 {
-		m.chrBank2 = regValue
+		m.chrBank1 = regValue
+		//log.Printf("Setting ChrBank2 Register for MMC1 %x", regValue)
 	} else if addr >= 0xE000 && addr <= 0xFFFF {
 		m.prgBank = regValue
+		//log.Printf("Setting PrgBank Register for MMC1 %x", regValue)
 	}
 }
 

@@ -4,7 +4,6 @@ import (
 	"encoding/binary"
 	"image"
 	"image/color"
-	"log"
 )
 
 type Ppu struct {
@@ -55,9 +54,9 @@ func (ppu *Ppu) DataRead() uint8 {
 	ppuAddressArr := []uint8{ppu.ppuAddrMSB, ppu.ppuAddrLSB}
 	ppuWriteAddress := binary.BigEndian.Uint16(ppuAddressArr)
 
-	absReadAddress := ((ppuWriteAddress+ppu.ppuAddrOffset) - 1) % 0x3FFF - 1
+	absReadAddress := ((ppuWriteAddress+ppu.ppuAddrOffset) - 1) % 0x3FFF
 
-	log.Printf("reading ppu 0x%x, value: 0x%x, OFFSET: %d", absReadAddress, ppu.Read8(absReadAddress), ppu.ppuAddrOffset)
+	//log.Printf("reading ppu 0x%x, value: 0x%x, OFFSET: %d", absReadAddress, ppu.Read8(absReadAddress), ppu.ppuAddrOffset)
 
 	ppu.incrementAddress()
 
@@ -82,7 +81,7 @@ func (ppu *Ppu) Write8(value uint8) {
 		ppu.Memory[absWriteAddress - 0x400] = value
 	}
 
-	log.Printf("writing ppu 0x%x, value: 0x%x, OFFSET: %d", absWriteAddress, ppu.Read8(absWriteAddress), ppu.ppuAddrOffset)
+	//log.Printf("writing ppu 0x%x, value: 0x%x, OFFSET: %d", absWriteAddress, ppu.Read8(absWriteAddress), ppu.ppuAddrOffset)
 
 	ppu.incrementAddress()
 }
@@ -97,7 +96,11 @@ func (ppu *Ppu) incrementAddress() {
 }
 
 func (ppu *Ppu) Read8(addr uint16) uint8 {
-	return ppu.nes.CARTIO.read8(addr)
+	if addr < 0x2000 {
+		return ppu.nes.CARTIO.read8(addr)
+	} else {
+		return ppu.Memory[addr]
+	}
 }
 
 func (ppu *Ppu) setPpuAddr(addr uint8) {
@@ -133,8 +136,14 @@ func (ppu *Ppu) ClearVBlank() {
 }
 
 func (ppu *Ppu) get8x8Tile(base uint16, pos uint16) [8][8]uint8 {
-	b0 := ppu.Memory[base+(pos*0x10) : base+(pos*0x10)+8]
-	b1 := ppu.Memory[base+(pos*0x10)+8 : base+(pos*0x10)+16]
+	b0 := []byte{}
+	for i := uint16(0); i < 8; i++ {
+		b0 = append(b0, ppu.Read8(base+(pos*0x10)+i))
+	}
+	b1 := []byte{}
+	for i := uint16(8); i < 16; i++ {
+		b1 = append(b1, ppu.Read8(base+(pos*0x10)+i))
+	}
 
 	var result [8][8]uint8
 
@@ -153,8 +162,15 @@ func (ppu *Ppu) get8x8Tile(base uint16, pos uint16) [8][8]uint8 {
 }
 
 func (ppu *Ppu) get8x16Tile(base uint16, pos uint16) [16][8]uint8 {
-	b0 := ppu.Memory[base+(pos*0x10) : base+(pos*0x10)+8]
-	b1 := ppu.Memory[base+(pos*0x10)+8 : base+(pos*0x10)+16]
+	b0 := []byte{}
+	for i := uint16(0); i < 8; i++ {
+		b0 = append(b0, ppu.Read8(base+(pos*0x10)+i))
+	}
+	b1 := []byte{}
+	for i := uint16(8); i < 16; i++ {
+		b1 = append(b1, ppu.Read8(base+(pos*0x10)+i))
+	}
+
 
 	var result [16][8]uint8
 
@@ -175,7 +191,7 @@ func (ppu *Ppu) get8x16Tile(base uint16, pos uint16) [16][8]uint8 {
 func (ppu *Ppu) get2x2Attribute(base uint16, pos uint8) [2][2]uint8 {
 	var result [2][2]uint8
 
-	b := ppu.Memory[base+0x3C0+uint16(pos)]
+	b := ppu.Read8(base+0x3C0+uint16(pos))
 
 	result[0][0] = b & 0x03
 	result[0][1] = (b & 0x0C) >> 2
