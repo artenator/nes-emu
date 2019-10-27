@@ -24,8 +24,19 @@ type Ppu struct {
 	FrameReady	   bool
 
 	ppumask     PpuMask
+	ppuctrl PpuCtrl
 	NmiOccurred bool
 	PpuReady bool
+}
+
+type PpuCtrl struct {
+	nmiGenerate uint8
+	ppuMasterSlaveSelect uint8
+	spriteSize uint8
+	backgroundPatternTableAddr uint8
+	spritePatternTableAddr uint8
+	vramAddressIncrement uint8
+	baseNametableAddr uint8
 }
 
 type PpuMask struct {
@@ -37,6 +48,16 @@ type PpuMask struct {
 	spriteLeftColumnEnable bool
 	backgroundLeftColumnEnable bool
 	greyScale bool
+}
+
+func (mask *PpuCtrl) setValues(value uint8) {
+	mask.nmiGenerate = (value >> 7) & 1
+	mask.ppuMasterSlaveSelect = (value >> 6) & 1
+	mask.spriteSize = (value >> 5) & 1
+	mask.backgroundPatternTableAddr = (value >> 4) & 1
+	mask.spritePatternTableAddr = (value >> 3) & 1
+	mask.vramAddressIncrement = (value >> 2) & 1
+	mask.baseNametableAddr = (value) & 0x3
 }
 
 func (mask *PpuMask) setValues(value uint8) {
@@ -162,28 +183,14 @@ func (ppu *Ppu) get8x8Tile(base uint16, pos uint16) [8][8]uint8 {
 }
 
 func (ppu *Ppu) get8x16Tile(base uint16, pos uint16) [16][8]uint8 {
-	b0 := []byte{}
-	for i := uint16(0); i < 8; i++ {
-		b0 = append(b0, ppu.Read8(base+(pos*0x10)+i))
-	}
-	b1 := []byte{}
-	for i := uint16(8); i < 16; i++ {
-		b1 = append(b1, ppu.Read8(base+(pos*0x10)+i))
-	}
+	tile8x8_1 := ppu.get8x8Tile(base, pos)
+	tile8x8_2 := ppu.get8x8Tile(base, pos + 1)
 
 
 	var result [16][8]uint8
 
-	for i := 0; i < 8; i++ {
-		barr0 := b0[i]
-		barr1 := b1[i]
-		for j := uint8(0); j < 8; j++ {
-			var biResult uint8
-			biResult |= (barr0 >> (7 - j)) & 1
-			biResult |= ((barr1 >> (7 - j)) & 1) << 1
-			result[i][j] = biResult
-		}
-	}
+	copy(result[0:8], tile8x8_1[:])
+	copy(result[8:16], tile8x8_2[:])
 
 	return result
 }
@@ -310,29 +317,61 @@ func (ppu *Ppu) getSpriteColorAtPixel(x, y uint8, s Sprite) Color {
 	flipHorizontal := (s.attributes >> 6) & 1 == 1
 	flipVertical := (s.attributes >> 7) & 1 == 1
 
-	backgroundTileBase := uint16((ppu.nes.CPU.Memory[0x2000]>>3)&1) * 0x1000
-	backgroundTilePos := s.tileNum
+	var backgroundTileBase uint16
+	var tile8x8 [8][8]uint8
+	var tile8x16 [16][8]uint8
+	var backgroundTilePos uint8
 
-	backgroundTile := ppu.get8x8Tile(backgroundTileBase, uint16(backgroundTilePos))
-	xBG := x % 8
-	if flipHorizontal {
-		xBG = 7 - x % 8
+	// Check if we are in 8x16 sprite mode
+	if ppu.ppuctrl.spriteSize == 0 {
+		backgroundTileBase = uint16(ppu.ppuctrl.spritePatternTableAddr) * 0x1000
+		backgroundTilePos = s.tileNum
+		tile8x8 = ppu.get8x8Tile(backgroundTileBase, uint16(backgroundTilePos))
+
+		xBG := x % 8
+		if flipHorizontal {
+			xBG = 7 - x % 8
+		}
+
+		yBG := y % 8
+		if flipVertical {
+			yBG = 7 - y % 8
+		}
+
+		spriteColorPalette := ppu.getSpriteColorPalette(s.attributes & 0x03)
+		spriteColor := spriteColorPalette[tile8x8[yBG][xBG]]
+
+		// Check if sprites hide background
+		if tile8x8[yBG][xBG] == 0 {
+			spriteColor.A = 0
+		}
+
+		return spriteColor
+	} else {
+		backgroundTileBase = uint16(s.tileNum & 1) * 0x1000
+		backgroundTilePos = s.tileNum & ^uint8(0x01)
+		tile8x16 = ppu.get8x16Tile(backgroundTileBase, uint16(backgroundTilePos))
+
+		xBG := x % 8
+		if flipHorizontal {
+			xBG = 7 - x % 8
+		}
+
+		yBG := y % 16
+		if flipVertical {
+			yBG = 15 - y % 16
+		}
+
+		spriteColorPalette := ppu.getSpriteColorPalette(s.attributes & 0x03)
+		spriteColor := spriteColorPalette[tile8x16[yBG][xBG]]
+
+		// Check if sprites hide background
+		if tile8x16[yBG][xBG] == 0 {
+			spriteColor.A = 0
+		}
+
+		return spriteColor
 	}
-
-	yBG := y % 8
-	if flipVertical {
-		yBG = 7 - y % 8
-	}
-
-	spriteColorPalette := ppu.getSpriteColorPalette(s.attributes & 0x03)
-	spriteColor := spriteColorPalette[backgroundTile[yBG][xBG]]
-
-	// Check if sprites hide background
-	if backgroundTile[yBG][xBG] == 0 {
-		spriteColor.A = 0
-	}
-
-	return spriteColor
 }
 
 func (ppu *Ppu) GetColorAtPixel(x, y uint8) Color {
@@ -371,12 +410,22 @@ func (ppu *Ppu) testGetSpriteColorAtPixel(x, y uint8) Color {
 	for id, sprite := range ppu.OAM {
 		if sprite.yCoord > 0x00 && sprite.yCoord < 0xEF {
 			// TODO: 8x16 sprites
+
+
 			// trigger sprite 0 hit
 			if id == 0 && ppu.ppumask.backgroundEnable && ppu.ppumask.spriteEnable {
 				ppu.setSpriteHit()
 			}
+
+			var ySpriteOffset uint8
+			if ppu.ppuctrl.spriteSize == 1 {
+				ySpriteOffset = 16
+			} else {
+				ySpriteOffset = 8
+			}
+
 			inRangeX := x >= sprite.xCoord && x < sprite.xCoord+8
-			inRangeY := y >= sprite.yCoord && y < sprite.yCoord+8
+			inRangeY := y >= sprite.yCoord && y < sprite.yCoord+ySpriteOffset
 			if inRangeX && inRangeY {
 				spriteColor := ppu.getSpriteColorAtPixel(x-sprite.xCoord, y-sprite.yCoord, sprite)
 				if spriteColor.A > 0 {
@@ -387,6 +436,10 @@ func (ppu *Ppu) testGetSpriteColorAtPixel(x, y uint8) Color {
 	}
 
 	return Color{}
+}
+
+func (ppu *Ppu) is8x16Mode() bool {
+	return (ppu.nes.CPU.Read8(0x2000) >> 5) & 1 == 1
 }
 
 func (ppu *Ppu) setSpriteHit() {

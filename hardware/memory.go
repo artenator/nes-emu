@@ -3,7 +3,6 @@ package hardware
 import (
 	"encoding/binary"
 	"log"
-	"strconv"
 )
 
 func (cpu *Cpu) Read8(addr uint16) uint8 {
@@ -50,11 +49,18 @@ func (cpu *Cpu) Read16(addr uint16) uint16 {
 func (cpu *Cpu) Write8(addr uint16, value uint8) {
 	if addr < 0x2000 {
 		cpu.Memory[addr&0x7FF] = value
+		if addr == 0x200 {
+			log.Printf("wrote %x to addr %x", value, addr)
+		}
 	} else if addr >= 0x2000 && addr < 0x4000 {
 		truncAddr := addr & 0x2007
 
 		cpu.Memory[truncAddr] = value
 
+		// PPUCTRL
+		if truncAddr == 0x2000 {
+			cpu.nes.PPU.ppuctrl.setValues(value)
+		}
 		// PPUMASK
 		if truncAddr == 0x2001 {
 			cpu.nes.PPU.ppumask.setValues(value)
@@ -78,8 +84,8 @@ func (cpu *Cpu) Write8(addr uint16, value uint8) {
 		// PPUSCROLL
 		if truncAddr == 0x2005 {
 			cpu.nes.PPU.setPpuScrollAddr(value)
-			log.Printf("writing to ppuscroll 0x%x", value)
-			log.Println(strconv.FormatInt(int64(cpu.Memory[0x2000]), 2))
+			//log.Printf("writing to ppuscroll 0x%x", value)
+			//log.Println(strconv.FormatInt(int64(cpu.Memory[0x2000]), 2))
 			//log.Printf("+%v", cpu.nes.PPU.Memory[0x2000:0x3000])
 		}
 	} else {
@@ -104,14 +110,14 @@ func (cpu *Cpu) Write8(addr uint16, value uint8) {
 		} else if addr == 0x4014 {
 			// write all the sprites to oam
 			startPos := uint16(value) << 8
-			log.Printf("start pos is %x", startPos)
+			//log.Printf("start pos is %x", startPos)
 			for idx, _ := range cpu.Memory[startPos:startPos + 0x100] {
 				byteRead := cpu.Read8(startPos+uint16(idx))
 
 				cpu.nes.PPU.WriteOAM8(byteRead)
 			}
 			//log.Printf("OAM %+v", cpu.nes.PPU.OAM)
-			//log.Printf("OAM %s", cpu.nes.PPU.OAM)
+			log.Printf("OAM %s", cpu.nes.PPU.OAM)
 			cpu.nes.PPU.SetOamAddr(0)
 			cpu.nes.PPU.oamSpriteAddr = 0
 
