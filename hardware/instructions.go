@@ -310,7 +310,7 @@ var Instructions = [256]instruction{
 		0x1D,
 		3,
 		4,
-		zpgX,},
+		absX,},
 	// ASL - Absolute, X
 	instruction{
 		"ASL",
@@ -926,7 +926,7 @@ var Instructions = [256]instruction{
 		0x75,
 		2,
 		3,
-		zpg,},
+		zpgX,},
 	// ROR - Zero Page X
 	instruction{
 		"ROR",

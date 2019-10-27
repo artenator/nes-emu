@@ -23,7 +23,7 @@ func (cpu *Cpu) Read8(addr uint16) uint8 {
 		val := (cpu.Controller >> (7 - (cpu.ControllerIdx % 8))) & 1
 		cpu.ControllerIdx++
 		return val
-	} else if addr >= 0x8000 {
+	} else if addr >= 0x6000 {
 		readFromMapper := cpu.nes.CARTIO.read8(addr)
 		return readFromMapper
 	} else {
@@ -39,7 +39,7 @@ func (cpu *Cpu) Read16(addr uint16) uint16 {
 		return binary.LittleEndian.Uint16(cpu.Memory[addr&0x7FF : (uint32(addr)&0x7FF)+2])
 	} else if addr >= 0x2000 && addr < 0x4000 {
 		return binary.LittleEndian.Uint16(cpu.Memory[addr&0x2007 : (uint32(addr)&0x2007)+2])
-	} else if addr >= 0x8000 {
+	} else if addr >= 0x6000 {
 		return cpu.nes.CARTIO.read16(addr)
 	} else {
 		return binary.LittleEndian.Uint16(cpu.Memory[addr : uint32(addr)+2])
@@ -49,9 +49,6 @@ func (cpu *Cpu) Read16(addr uint16) uint16 {
 func (cpu *Cpu) Write8(addr uint16, value uint8) {
 	if addr < 0x2000 {
 		cpu.Memory[addr&0x7FF] = value
-		if addr == 0x200 {
-			log.Printf("wrote %x to addr %x", value, addr)
-		}
 	} else if addr >= 0x2000 && addr < 0x4000 {
 		truncAddr := addr & 0x2007
 
@@ -117,7 +114,7 @@ func (cpu *Cpu) Write8(addr uint16, value uint8) {
 				cpu.nes.PPU.WriteOAM8(byteRead)
 			}
 			//log.Printf("OAM %+v", cpu.nes.PPU.OAM)
-			log.Printf("OAM %s", cpu.nes.PPU.OAM)
+			//log.Printf("OAM %s", cpu.nes.PPU.OAM)
 			cpu.nes.PPU.SetOamAddr(0)
 			cpu.nes.PPU.oamSpriteAddr = 0
 
@@ -132,6 +129,9 @@ func (cpu *Cpu) Write8(addr uint16, value uint8) {
 		} else if addr == 0x4017 {
 			cpu.nes.APU.setFrameCounterValues(value)
 		} else if addr >= 0x6000 {
+			if addr >= 0x6000 && addr <= 0x6050 {
+				log.Println(string(cpu.Memory[0x6000:0x6050]))
+			}
 			cpu.nes.CARTIO.write8(addr, value)
 		}
 	}

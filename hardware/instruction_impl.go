@@ -121,10 +121,10 @@ func (cpu *Cpu) RunInstruction(instr instruction, doLog bool) {
 		addr = uint16(arg)
 	case zpgX:
 		arg = cpu.Read8(cpu.PC + 1)
-		addr = uint16(arg + cpu.X) & 0xFF // wrap around for X
+		addr = (uint16(arg) + uint16(cpu.X)) & 0xFF // wrap around for X
 	case zpgY:
 		arg = cpu.Read8(cpu.PC + 1)
-		addr = uint16(arg + cpu.Y) & 0xFF // wrap around for Y
+		addr = (uint16(arg) + uint16(cpu.Y)) & 0xFF // wrap around for Y
 	case abs:
 		arg := cpu.Read16(cpu.PC + 1)
 		addr = arg
@@ -136,10 +136,18 @@ func (cpu *Cpu) RunInstruction(instr instruction, doLog bool) {
 		addr = arg + uint16(cpu.Y)
 	case ind:
 		arg := cpu.Read16(cpu.PC + 1)
-		addr = cpu.Read16(arg)
+
+		// JMP indirect hardware bug
+		if instr.opcode == 0x6c && arg & 0xFF == 0xFF {
+			lowByte := cpu.Read8(arg)
+			highByte := cpu.Read8(arg & ^uint16(0xFF))
+			addr = uint16(lowByte) | (uint16(highByte) << 8)
+		} else {
+			addr = cpu.Read16(arg)
+		}
 	case indX:
 		arg = cpu.Read8(cpu.PC + 1)
-		addrLocation := uint16(arg + cpu.X) & 0xFF
+		addrLocation := (uint16(arg) + uint16(cpu.X)) & 0xFF
 		if addrLocation == 0xFF {
 			lowByte := cpu.Read8(0xFF)
 			highByte := cpu.Read8(0x00)
@@ -389,7 +397,7 @@ func (cpu *Cpu) ADC(instr instruction, addr uint16, value uint8) {
 	} else {
 		cpu.clearCarry()
 	}
-	
+
 	// Set the overflow flag
 	if ((cpu.A ^ result) & (value ^ result) & 0x80) > 0 {
 		cpu.setOverflow()
@@ -565,7 +573,7 @@ func (cpu *Cpu) BPL(instr instruction, addr uint16, value uint8) {
 // sets break command flag
 func (cpu *Cpu) BRK(instr instruction, addr uint16, value uint8) {
 	// push program counter and processor status to stack
-	cpu.Push16(cpu.PC)
+	cpu.Push16(cpu.PC + 1)
 
 	cpu.setBreak()
 	cpu.Push8(cpu.P | 0x30)

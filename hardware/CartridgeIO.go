@@ -35,6 +35,8 @@ func (m *Mapper0CIO) initCartIO(cartridge *Cartridge) {
 func (m *Mapper0CIO) read8(addr uint16) uint8 {
 	if addr < 0x2000 {
 		return m.cartridge.chrRom[addr]
+	} else if addr >= 0x6000 && addr < 0x8000 {
+		return m.cartridge.nes.CPU.Memory[addr]
 	} else if addr >= 0x8000 {
 		if m.cartridge.prgRomBlocks == 1 {
 			return m.cartridge.prgRom[(addr - 0x8000) % 0x4000]
@@ -56,11 +58,13 @@ func (m *Mapper0CIO) read16(addr uint16) uint16 {
 
 	}
 
-	return binary.LittleEndian.Uint16(m.cartridge.prgRom[(addr - 0x8000) : (addr - 0x8000) + 2])
+	return binary.LittleEndian.Uint16(m.cartridge.nes.CPU.Memory[addr : addr + 2])
 }
 
 func (m *Mapper0CIO) write8(addr uint16, value uint8) {
-
+	if addr >= 0x6000 && addr < 0x8000 {
+		m.cartridge.nes.CPU.Memory[addr] = value
+	}
 }
 
 type Mapper1CIO struct {
@@ -205,7 +209,7 @@ func (m *Mapper1CIO) read16(addr uint16) uint16 {
 		}
 	}
 
-	return binary.LittleEndian.Uint16(m.cartridge.prgRom[(addr - 0x8000) : (addr - 0x8000) + 2])
+	return binary.LittleEndian.Uint16(m.cartridge.nes.CPU.Memory[addr : addr + 2])
 }
 
 func (m *Mapper1CIO) setMirrorStyle() {
@@ -248,7 +252,9 @@ func (m *Mapper1CIO) setRegister(addr uint16, regValue byte) {
 }
 
 func (m *Mapper1CIO) write8(addr uint16, value uint8) {
-	if addr >= 0x8000 {
+	if addr >= 0x6000 && addr < 0x8000 {
+		m.cartridge.nes.CPU.Memory[addr] = value
+	} else if addr >= 0x8000 {
 		isReset := getBit(value, 7) == 1
 		isFifthWrite := m.shiftReg & 1 == 1
 
