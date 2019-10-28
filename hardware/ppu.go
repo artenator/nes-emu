@@ -212,31 +212,31 @@ func (ppu *Ppu) getBackgroundColorPalette(pos uint8) [4]Color {
 	switch pos {
 	case 0:
 		return [4]Color{
-			palette[ppu.Read8(0x3F00)],
-			palette[ppu.Read8(0x3F01)],
-			palette[ppu.Read8(0x3F02)],
-			palette[ppu.Read8(0x3F03)],
+			palette[ppu.Read8(0x3F00) % 64],
+			palette[ppu.Read8(0x3F01) % 64],
+			palette[ppu.Read8(0x3F02) % 64],
+			palette[ppu.Read8(0x3F03) % 64],
 		}
 	case 1:
 		return [4]Color{
-			palette[ppu.Read8(0x3F00)],
-			palette[ppu.Read8(0x3F05)],
-			palette[ppu.Read8(0x3F06)],
-			palette[ppu.Read8(0x3F07)],
+			palette[ppu.Read8(0x3F00) % 64],
+			palette[ppu.Read8(0x3F05) % 64],
+			palette[ppu.Read8(0x3F06) % 64],
+			palette[ppu.Read8(0x3F07) % 64],
 		}
 	case 2:
 		return [4]Color{
-			palette[ppu.Read8(0x3F00)],
-			palette[ppu.Read8(0x3F09)],
-			palette[ppu.Read8(0x3F0A)],
-			palette[ppu.Read8(0x3F0B)],
+			palette[ppu.Read8(0x3F00) % 64],
+			palette[ppu.Read8(0x3F09) % 64],
+			palette[ppu.Read8(0x3F0A) % 64],
+			palette[ppu.Read8(0x3F0B) % 64],
 		}
 	case 3:
 		return [4]Color{
-			palette[ppu.Read8(0x3F00)],
-			palette[ppu.Read8(0x3F0D)],
-			palette[ppu.Read8(0x3F0E)],
-			palette[ppu.Read8(0x3F0F)],
+			palette[ppu.Read8(0x3F00) % 64],
+			palette[ppu.Read8(0x3F0D) % 64],
+			palette[ppu.Read8(0x3F0E) % 64],
+			palette[ppu.Read8(0x3F0F) % 64],
 		}
 	}
 
@@ -247,31 +247,31 @@ func (ppu *Ppu) getSpriteColorPalette(pos uint8) [4]Color {
 	switch pos {
 	case 0:
 		return [4]Color{
-			palette[ppu.Read8(0x3F00)],
-			palette[ppu.Read8(0x3F11)],
-			palette[ppu.Read8(0x3F12)],
-			palette[ppu.Read8(0x3F13)],
+			palette[ppu.Read8(0x3F00) % 64],
+			palette[ppu.Read8(0x3F11) % 64],
+			palette[ppu.Read8(0x3F12) % 64],
+			palette[ppu.Read8(0x3F13) % 64],
 		}
 	case 1:
 		return [4]Color{
-			palette[ppu.Read8(0x3F00)],
-			palette[ppu.Read8(0x3F15)],
-			palette[ppu.Read8(0x3F16)],
-			palette[ppu.Read8(0x3F17)],
+			palette[ppu.Read8(0x3F00) % 64],
+			palette[ppu.Read8(0x3F15) % 64],
+			palette[ppu.Read8(0x3F16) % 64],
+			palette[ppu.Read8(0x3F17) % 64],
 		}
 	case 2:
 		return [4]Color{
-			palette[ppu.Read8(0x3F00)],
-			palette[ppu.Read8(0x3F19)],
-			palette[ppu.Read8(0x3F1A)],
-			palette[ppu.Read8(0x3F1B)],
+			palette[ppu.Read8(0x3F00) % 64],
+			palette[ppu.Read8(0x3F19) % 64],
+			palette[ppu.Read8(0x3F1A) % 64],
+			palette[ppu.Read8(0x3F1B) % 64],
 		}
 	case 3:
 		return [4]Color{
-			palette[ppu.Read8(0x3F00)],
-			palette[ppu.Read8(0x3F1D)],
-			palette[ppu.Read8(0x3F1E)],
-			palette[ppu.Read8(0x3F1F)],
+			palette[ppu.Read8(0x3F00) % 64],
+			palette[ppu.Read8(0x3F1D) % 64],
+			palette[ppu.Read8(0x3F1E) % 64],
+			palette[ppu.Read8(0x3F1F) % 64],
 		}
 	}
 

@@ -134,17 +134,32 @@ const (
 func (m *Mapper1CIO) initCartIO(cartridge *Cartridge) {
 	m.cartridge = cartridge
 	m.shiftReg = 0x10
+	m.controlBank = 0xC
+	m.setMirrorStyle()
+	m.setBankModes()
 }
 
 func (m *Mapper1CIO) read8(addr uint16) uint8 {
 	if addr < 0x2000 {
-		switch m.chrRomBankMode {
-		case chrBankMode0:
-			//baseAddrIdx := m.chrBank0 & 0x1F
+		if m.cartridge.chrRomBlocks == 0 {
 			return m.cartridge.nes.PPU.Memory[addr]
-		case chrBankMode1:
-			//baseAddrIdx := m.chrBank0 & 0x1E
-			return m.cartridge.nes.PPU.Memory[addr]
+		} else {
+			numOf4kbBlocks := m.cartridge.chrRomBlocks * 2
+			switch m.chrRomBankMode {
+			case chrBankMode0:
+				truncOffsetAddr := addr & 0x1FFF
+				baseAddrIdx := m.chrBank0 & 0xE // ignore last bit in 8kb mode
+				return m.cartridge.chrRom[uint32(baseAddrIdx % numOf4kbBlocks) * 0x1000 + uint32(truncOffsetAddr)]
+			case chrBankMode1:
+				truncOffsetAddr := addr & 0x1FFF
+				if truncOffsetAddr < 0x1000 {
+					baseAddrIdx := m.chrBank0
+					return m.cartridge.chrRom[uint32(baseAddrIdx % numOf4kbBlocks) * 0x1000 + uint32(truncOffsetAddr)]
+				} else {
+					baseAddrIdx := m.chrBank1
+					return m.cartridge.chrRom[uint32(baseAddrIdx % numOf4kbBlocks) * 0x1000 + uint32(truncOffsetAddr & 0xFFF)]
+				}
+			}
 		}
 	} else if addr >= 0x6000 && addr < 0x8000 {
 		return m.cartridge.nes.CPU.Memory[addr]
@@ -178,7 +193,31 @@ func (m *Mapper1CIO) read8(addr uint16) uint8 {
 }
 
 func (m *Mapper1CIO) read16(addr uint16) uint16 {
-	if addr >= 0x8000 {
+	if addr < 0x2000 {
+		if m.cartridge.chrRomBlocks == 0 {
+			return binary.LittleEndian.Uint16(m.cartridge.nes.PPU.Memory[addr:addr + 2])
+		} else {
+			numOf4kbBlocks := m.cartridge.chrRomBlocks
+			switch m.chrRomBankMode {
+			case chrBankMode0:
+				truncOffsetAddr := addr & 0x1FFF
+				baseAddrIdx := m.chrBank0 & 0xE // ignore last bit in 8kb mode
+				baseAddr := uint32(baseAddrIdx % numOf4kbBlocks) * 0x1000
+				return binary.LittleEndian.Uint16(m.cartridge.chrRom[baseAddr + uint32(truncOffsetAddr): baseAddr + uint32(truncOffsetAddr) + 2])
+			case chrBankMode1:
+				truncOffsetAddr := addr & 0x1FFF
+				if truncOffsetAddr < 0x1000 {
+					baseAddrIdx := m.chrBank0
+					baseAddr := uint32(baseAddrIdx % numOf4kbBlocks) * 0x1000
+					return binary.LittleEndian.Uint16(m.cartridge.chrRom[baseAddr + uint32(truncOffsetAddr):baseAddr + uint32(truncOffsetAddr) + 2])
+				} else {
+					baseAddrIdx := m.chrBank1
+					baseAddr := uint32(baseAddrIdx % numOf4kbBlocks) * 0x1000
+					return binary.LittleEndian.Uint16(m.cartridge.chrRom[baseAddr + uint32(truncOffsetAddr) : baseAddr + uint32(truncOffsetAddr) + 2])
+				}
+			}
+		}
+	} else if addr >= 0x8000 {
 		switch m.prgRomBankMode {
 		case prgBankMode0, prgBankMode1:
 			truncOffsetAddr := addr & 0x7FFF
@@ -241,10 +280,10 @@ func (m *Mapper1CIO) setRegister(addr uint16, regValue byte) {
 		//log.Printf("Bank Modes: chr %x prg %x", m.chrRomBankMode, m.prgRomBankMode)
 	} else if addr >= 0xA000 && addr < 0xC000 {
 		m.chrBank0 = regValue
-		//log.Printf("Setting ChrBank1 Register for MMC1 %x", regValue)
+		//log.Printf("Setting ChrBank0 Register for MMC1 %x", regValue)
 	} else if addr >= 0xC000 && addr < 0xE000 {
 		m.chrBank1 = regValue
-		//log.Printf("Setting ChrBank2 Register for MMC1 %x", regValue)
+		//log.Printf("Setting ChrBank1 Register for MMC1 %x", regValue)
 	} else if addr >= 0xE000 && addr <= 0xFFFF {
 		m.prgBank = regValue
 		//log.Printf("Setting PrgBank Register for MMC1 %x", regValue)

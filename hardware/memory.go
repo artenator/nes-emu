@@ -2,7 +2,6 @@ package hardware
 
 import (
 	"encoding/binary"
-	"log"
 )
 
 func (cpu *Cpu) Read8(addr uint16) uint8 {
@@ -36,7 +35,7 @@ func (cpu *Cpu) Read16(addr uint16) uint16 {
 	// TODO: @artenator this read totally messes up at the end of the address space. Fix it
 
 	if addr < 0x2000 {
-		return binary.LittleEndian.Uint16(cpu.Memory[addr&0x7FF : (uint32(addr)&0x7FF)+2])
+		return binary.LittleEndian.Uint16(cpu.Memory[addr : uint32(addr)+2])
 	} else if addr >= 0x2000 && addr < 0x4000 {
 		return binary.LittleEndian.Uint16(cpu.Memory[addr&0x2007 : (uint32(addr)&0x2007)+2])
 	} else if addr >= 0x6000 {
@@ -129,9 +128,6 @@ func (cpu *Cpu) Write8(addr uint16, value uint8) {
 		} else if addr == 0x4017 {
 			cpu.nes.APU.setFrameCounterValues(value)
 		} else if addr >= 0x6000 {
-			if addr >= 0x6000 && addr <= 0x6050 {
-				log.Println(string(cpu.Memory[0x6000:0x6050]))
-			}
 			cpu.nes.CARTIO.write8(addr, value)
 		}
 	}
