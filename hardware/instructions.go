@@ -187,7 +187,7 @@ var Instructions = [256]instruction{
 		imm,},
 	// NOP - Absolute
 	instruction{
-		"ASL",
+		"NOP",
 		0x0C,
 		3,
 		4,
@@ -525,7 +525,7 @@ var Instructions = [256]instruction{
 	instruction{
 		"NOP",
 		0x3C,
-		1,
+		3,
 		2,
 		impl,},
 	// AND - Absolute X

@@ -620,7 +620,7 @@ func (cpu *Cpu) CLV(instr instruction, addr uint16) {
 func (cpu *Cpu) cmpVals(x, y uint8) {
 
 	// Compute the result
-        compareResult := x - y
+	compareResult := x - y
 
 	// Set the carry flag if Y >= value
 	if x >= y {
@@ -680,10 +680,8 @@ func (cpu *Cpu) setNHelper(value uint8) {
 // DCP - Decrement from memory with C
 func (cpu *Cpu) DCP(instr instruction, addr uint16, value uint8) {
 	result := value - 1
-	oldBit0 := getBit(value, 0)
 	cpu.Write8(addr, result)
-
-	cpu.setCHelper(oldBit0)
+	cpu.cmpVals(cpu.A, result)
 }
 
 // DEC - Decrement from memory
@@ -749,22 +747,26 @@ func (cpu *Cpu) INY(instr instruction, addr uint16) {
 	cpu.setNHelper(result)
 }
 
-// ISC - Increment from Y register
+// ISC - INCs the contents of a memory location and then SBCs the result from the A register
 func (cpu *Cpu) ISC(instr instruction, addr uint16, value uint8) {
-	oldBit7 := getBit(cpu.A, 7)
+	//oldBit7 := getBit(cpu.A, 7)
+	//
+	//result := value + 1
+	//cpu.A -= result
+	//cpu.Write8(addr, result)
+	//
+	//if oldBit7 != getBit(cpu.A, 7) {
+	//	cpu.setOverflow()
+	//} else {
+	//	cpu.clearOverflow()
+	//}
+	//
+	//cpu.setCHelper(oldBit7)
+	//cpu.setZHelper(cpu.A)
+	//cpu.setNHelper(cpu.A)
 
-	result := value + 1
-	cpu.A -= result
-
-	if oldBit7 != getBit(cpu.A, 7) {
-		cpu.setOverflow()
-	} else {
-		cpu.clearOverflow()
-	}
-
-	cpu.setCHelper(oldBit7)
-	cpu.setZHelper(result)
-	cpu.setNHelper(result)
+	cpu.INC(instr, addr, value)
+	cpu.SBC(instr, addr, value + 1)
 }
 
 // JMP - jump to address
@@ -972,8 +974,8 @@ func (cpu *Cpu) SAX(instr instruction, addr uint16) {
 	result := cpu.A & cpu.X
 	cpu.Write8(addr, result)
 
-	cpu.setZHelper(result)
-	cpu.setNHelper(result)
+	//cpu.setZHelper(result)
+	//cpu.setNHelper(result)
 }
 
 // SBC - Subtract with Carry

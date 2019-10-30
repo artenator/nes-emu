@@ -46,7 +46,7 @@ func runNESInstruction(nes hardware.NES, numOfInstructions *uint, lastFPS int) {
 	opcode := nes.CPU.Read8(nes.CPU.PC)
 	instr := hardware.Instructions[opcode]
 
-	nes.CPU.RunInstruction(instr, false)
+	nes.CPU.RunInstruction(instr, true)
 	nes.PPU.RunPPUCycles(uint16(3 * instr.Cycles))
 	nes.APU.RunAPUCycles(uint16(instr.Cycles), lastFPS)
 

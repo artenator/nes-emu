@@ -87,25 +87,30 @@ func TestCpu(t *testing.T) {
 	for opcode != 0x00 {
 		if nes.CPU.PC != expected[numOfInstructions].PC {
 			t.Errorf("Wrong PC. Expected %02x but got %02x\n %+v\nPC:%02x", expected[numOfInstructions].PC, nes.CPU.PC, Instructions[opcode], nes.CPU.PC)
+			log.Printf("Wrong PC. Expected %02x but got %02x\n %+v\nPC:%02x", expected[numOfInstructions].PC, nes.CPU.PC, Instructions[opcode], nes.CPU.PC)
 		}
 
 		if nes.CPU.A != expected[numOfInstructions].A {
 			t.Errorf("Wrong Acc. Expected %02x but got %02x\n %+v\nPC:%02x", expected[numOfInstructions].A, nes.CPU.A, Instructions[opcode], nes.CPU.PC)
+			log.Printf("Wrong Acc. Expected %02x but got %02x\n %+v\nPC:%02x", expected[numOfInstructions].A, nes.CPU.A, Instructions[opcode], nes.CPU.PC)
 		}
 
 		if nes.CPU.X != expected[numOfInstructions].X {
 			t.Errorf("Wrong X. Expected %02x but got %02x\n %+v\nPC:%02x", expected[numOfInstructions].X, nes.CPU.X, Instructions[opcode], nes.CPU.PC)
+			log.Printf("Wrong X. Expected %02x but got %02x\n %+v\nPC:%02x", expected[numOfInstructions].X, nes.CPU.X, Instructions[opcode], nes.CPU.PC)
 		}
 
 		if nes.CPU.Y != expected[numOfInstructions].Y {
 			t.Errorf("Wrong Y. Expected %02x but got %02x\n %+v\nPC:%02x", expected[numOfInstructions].Y, nes.CPU.Y, Instructions[opcode], nes.CPU.PC)
+			log.Printf("Wrong Y. Expected %02x but got %02x\n %+v\nPC:%02x", expected[numOfInstructions].Y, nes.CPU.Y, Instructions[opcode], nes.CPU.PC)
 		}
 
 		if nes.CPU.P != expected[numOfInstructions].P {
 			t.Errorf("Wrong P. Expected %02x but got %02x\n %+v\nPC:%02x", expected[numOfInstructions].P, nes.CPU.P, Instructions[opcode], nes.CPU.PC)
+			log.Printf("Wrong P. Expected %02x but got %02x\n %+v\nPC:%02x", expected[numOfInstructions].P, nes.CPU.P, Instructions[opcode], nes.CPU.PC)
 		}
 
-		nes.CPU.RunInstruction(Instructions[opcode], false)
+		nes.CPU.RunInstruction(Instructions[opcode], true)
 
 		numOfInstructions++
 
