@@ -27,6 +27,9 @@ type Ppu struct {
 	ppuctrl PpuCtrl
 	NmiOccurred bool
 	PpuReady bool
+
+	currentTiles [0x21][8][8]uint8
+	currentAttributes [0x21][2][2]uint8
 }
 
 type PpuCtrl struct {
@@ -462,6 +465,24 @@ func (ppu *Ppu) clearSpriteHit() {
 	ppu.nes.CPU.Memory[0x2002] &= 0xBF
 }
 
+func (ppu *Ppu) getAllTilesForScanline(nameTableY, nameTableX uint16) {
+	ppu.currentTiles = [0x21][8][8]uint8{}
+	ppu.currentAttributes = [0x21][2][2]uint8{}
+	nameTableSelect := ppu.nes.CPU.Memory[0x2000] & 0x03
+
+	for x := uint16(0); x < 0x21; x++ {
+		backgroundTileOffset := ((nameTableY % 240/8) * 32) + (((nameTableX + 8 * x) % 256 / 8) % 32)
+		nameTableBase := (0x2000 + (uint16(nameTableSelect)*0x400) + (nameTableY / 240) * 0x800 + ((nameTableX + 8 * x) / 256) * 0x400) & 0x2FFF
+		backgroundTileBase := uint16((ppu.nes.CPU.Memory[0x2000]>>4)&1) * 0x1000
+		backgroundTilePos := ppu.Memory[nameTableBase+backgroundTileOffset]
+		backgroundTile := ppu.get8x8Tile(backgroundTileBase, uint16(backgroundTilePos))
+		attributePalettePos := uint8((nameTableY % 240/32)*8) + ((uint8((nameTableX + 8 * x) % 256) / 32) % 32)
+		attributeTile := ppu.get2x2Attribute(nameTableBase, attributePalettePos)
+		copy(ppu.currentTiles[x][0:8], backgroundTile[0:8])
+		copy(ppu.currentAttributes[x][0:2], attributeTile[0:2])
+	}
+}
+
 func (ppu *Ppu) PPURun() {
 
 	if ppu.Scanline == 0 {
@@ -470,29 +491,22 @@ func (ppu *Ppu) PPURun() {
 	}
 
 	if ppu.Cycle == 340 && ppu.Scanline < 240 {
-		nameTableY := uint16(ppu.ppuScrollLSB)
-		nameTableX := uint16(ppu.ppuScrollMSB)
-		backgroundTileBase := uint16((ppu.nes.CPU.Memory[0x2000]>>4)&1) * 0x1000
-		backgroundTileOffset := (uint16(0/8) * 32) + (uint16(0/8) % 32)
-		nameTableSelect := ppu.nes.CPU.Memory[0x2000] & 0x03
-		nameTableBase := 0x2000 + uint16(uint16(nameTableSelect)*0x400)
-		backgroundTilePos := ppu.Memory[nameTableBase+backgroundTileOffset]
-		backgroundTile := ppu.get8x8Tile(backgroundTileBase, uint16(backgroundTilePos))
-		attributePalettePos := uint8((0/32)*8) + ((0 / 32) % 32)
-		attributeTile := ppu.get2x2Attribute(backgroundTileBase, attributePalettePos)
 		sl := ppu.Scanline
+		nameTableY := sl + uint16(ppu.ppuScrollLSB)
+
+		if nameTableY % 8 == 0 {
+			ppu.getAllTilesForScanline(nameTableY, uint16(ppu.ppuScrollMSB))
+		}
+
 		for x := 0; x < 256; x++ {
-			nameTableY = sl + uint16(ppu.ppuScrollLSB)
-			nameTableX = uint16(x) + uint16(ppu.ppuScrollMSB)
-			backgroundTileOffset = ((nameTableY % 240/8) * 32) + ((nameTableX % 256/8) % 32)
-			nameTableBase = (0x2000 + (uint16(nameTableSelect)*0x400) + (nameTableY / 240) * 0x800 + (nameTableX / 256) * 0x400) & 0x2FFF
-			backgroundTilePos = ppu.Memory[nameTableBase+backgroundTileOffset]
-			backgroundTile = ppu.get8x8Tile(backgroundTileBase, uint16(backgroundTilePos))
-			attributePalettePos = uint8((nameTableY % 240/32)*8) + ((uint8(nameTableX % 256) / 32) % 32)
-			attributeTile = ppu.get2x2Attribute(nameTableBase, attributePalettePos)
+			nameTableX := uint16(x) + uint16(ppu.ppuScrollMSB)
+
+			currentTileIdx := (int(ppu.ppuScrollMSB % 8) + x) / 8 % 0x21
+
+
 			c := ppu.testGetSpriteColorAtPixel(uint8(x), uint8(sl))
 			if c.A == 0 {
-				c = ppu.GetColorAtPixelOptimized(uint8(nameTableX % 256), uint8(nameTableY % 240), backgroundTile, attributeTile)
+				c = ppu.GetColorAtPixelOptimized(uint8(nameTableX % 256), uint8(nameTableY % 240), ppu.currentTiles[currentTileIdx], ppu.currentAttributes[currentTileIdx])
 			}
 			ppu.Frame.SetRGBA(x, int(sl), color.RGBA{c.R, c.G, c.B, uint8(c.A)})
 		}
