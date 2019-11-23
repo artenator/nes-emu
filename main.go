@@ -69,9 +69,11 @@ func runNEStoFrame(nes hardware.NES, numOfInstructions *uint, lastFPS int) {
 }
 
 func run() {
+	nes := hardware.NewNES(512, 480)
+
 	cfg := pixelgl.WindowConfig{
 		Title:  "Arte's NES Emulator",
-		Bounds: pixel.R(0, 0, 256, 240),
+		Bounds: pixel.R(0, 0, float64(nes.Xwin), float64(nes.Ywin)),
 		VSync:  false,
 	}
 
@@ -86,8 +88,6 @@ func run() {
 	if err != nil {
 		panic(err)
 	}
-
-	nes := hardware.NewNES()
 
 	cart, err := hardware.CreateCartridge(gameName)
 

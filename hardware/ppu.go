@@ -508,7 +508,12 @@ func (ppu *Ppu) PPURun() {
 			if c.A == 0 {
 				c = ppu.GetColorAtPixelOptimized(uint8(nameTableX % 256), uint8(nameTableY % 240), ppu.currentTiles[currentTileIdx], ppu.currentAttributes[currentTileIdx])
 			}
-			ppu.Frame.SetRGBA(x, int(sl), color.RGBA{c.R, c.G, c.B, uint8(c.A)})
+
+			for i := 0; i < 2; i++ {
+				for j := 0; j < 2; j++ {
+					ppu.Frame.SetRGBA(x * 2 + i, int(sl) * 2 + j, color.RGBA{c.R, c.G, c.B, uint8(c.A)})
+				}
+			}
 		}
 	}
 
@@ -541,11 +546,11 @@ func (ppu *Ppu) RunPPUCycles(numOfCycles uint16) {
 }
 
 func (ppu *Ppu) GenerateFrame() *image.RGBA {
-	var img *image.RGBA = image.NewRGBA(image.Rect(0, 0, 256, 240))
+	var img *image.RGBA = image.NewRGBA(image.Rect(0, 0, ppu.nes.Xwin, ppu.nes.Ywin))
 
-	for y := 0; y < 240; y++ {
-		for x := 0; x < 256; x++ {
-			c := ppu.GetColorAtPixel(uint8(x), uint8(y))
+	for y := 0; y < ppu.nes.Ywin; y++ {
+		for x := 0; x < ppu.nes.Xwin; x++ {
+			c := ppu.GetColorAtPixel(uint8(x) / 2, uint8(y) / 2)
 			img.SetRGBA(x, y, color.RGBA{c.R, c.G, c.B, uint8(c.A)})
 		}
 	}
