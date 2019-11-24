@@ -1,0 +1,2 @@
+- zelda game freezes when you meet the old lady and try to talk to her
+- framerate is slow for unknown reasons on experimental windows build 19008
