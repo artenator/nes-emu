@@ -424,7 +424,8 @@ func (ppu *Ppu) GetColorAtPixelOptimized(x, y uint8, backgroundTile [8][8]uint8,
 }
 
 func (ppu *Ppu) testGetSpriteColorAtPixel(x, y uint8) Color {
-	for id, sprite := range ppu.OAM {
+	for spriteIdx := 0; spriteIdx < len(ppu.OAM); spriteIdx++ {
+		sprite := ppu.OAM[spriteIdx]
 		if sprite.yCoord > 0x00 && sprite.yCoord < 0xEF {
 			var ySpriteOffset uint8
 			if ppu.ppuctrl.spriteSize == 1 {
@@ -438,7 +439,7 @@ func (ppu *Ppu) testGetSpriteColorAtPixel(x, y uint8) Color {
 
 			if inRangeX && inRangeY {
 				// trigger sprite 0 hit
-				if id == 0 && ppu.ppumask.backgroundEnable && ppu.ppumask.spriteEnable {
+				if spriteIdx == 0 && ppu.ppumask.backgroundEnable && ppu.ppumask.spriteEnable {
 					ppu.setSpriteHit()
 				}
 
