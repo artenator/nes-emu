@@ -30,6 +30,8 @@ type Ppu struct {
 
 	currentTiles [0x21][8][8]uint8
 	currentAttributes [0x21][2][2]uint8
+
+	spriteColors [240][256]Color
 }
 
 type PpuCtrl struct {
@@ -454,6 +456,41 @@ func (ppu *Ppu) testGetSpriteColorAtPixel(x, y uint8) Color {
 	return Color{}
 }
 
+func (ppu *Ppu) clearSpriteColors() {
+	ppu.spriteColors = [240][256]Color{}
+}
+
+func (ppu *Ppu) setAllSpriteColors() {
+	// clear all previous sprites
+	ppu.clearSpriteColors()
+
+	for spriteIdx := 0; spriteIdx < len(ppu.OAM); spriteIdx++ {
+		sprite := ppu.OAM[spriteIdx]
+		if sprite.yCoord > 0x00 && sprite.yCoord < 0xEF {
+			var ySpriteOffset uint8
+			if ppu.ppuctrl.spriteSize == 1 {
+				ySpriteOffset = 16
+			} else {
+				ySpriteOffset = 8
+			}
+
+			xEnd := uint8(8)
+			yEnd := ySpriteOffset
+
+			if spriteIdx == 0 && ppu.ppumask.backgroundEnable && ppu.ppumask.spriteEnable {
+				ppu.setSpriteHit()
+			}
+
+			for tileX := uint8(0); tileX < xEnd; tileX++ {
+				for tileY := uint8(0); tileY < yEnd; tileY++ {
+					spriteColor := ppu.getSpriteColorAtPixel(tileX, tileY, sprite)
+					ppu.spriteColors[sprite.yCoord + tileY][sprite.xCoord + tileX] = spriteColor
+				}
+			}
+		}
+	}
+}
+
 func (ppu *Ppu) is8x16Mode() bool {
 	return (ppu.nes.CPU.Read8(0x2000) >> 5) & 1 == 1
 }
@@ -505,7 +542,7 @@ func (ppu *Ppu) PPURun() {
 			currentTileIdx := (int(ppu.ppuScrollMSB % 8) + x) / 8 % 0x21
 
 
-			c := ppu.testGetSpriteColorAtPixel(uint8(x), uint8(sl))
+			c := ppu.spriteColors[sl][x]
 			if c.A == 0 {
 				c = ppu.GetColorAtPixelOptimized(uint8(nameTableX % 256), uint8(nameTableY % 240), ppu.currentTiles[currentTileIdx], ppu.currentAttributes[currentTileIdx])
 			}
@@ -516,6 +553,10 @@ func (ppu *Ppu) PPURun() {
 				}
 			}
 		}
+	}
+
+	if ppu.Scanline == 245 {
+		ppu.setAllSpriteColors()
 	}
 
 	if ppu.Scanline >= 257 && ppu.Scanline <= 320 {
