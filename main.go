@@ -7,6 +7,7 @@ import (
 	"github.com/faiface/pixel"
 	"github.com/faiface/pixel/imdraw"
 	"github.com/faiface/pixel/pixelgl"
+	"github.com/pkg/profile"
 	"github.com/shirou/gopsutil/cpu"
 	"golang.org/x/image/colornames"
 	"io"
@@ -142,7 +143,7 @@ func run() {
 
 func main() {
 	//initLogOutput()
-	//defer profile.Start().Stop()
+	defer profile.Start().Stop()
 	log.Println("Arte's NES Emu")
 	pixelgl.Run(run)
 }

@@ -393,6 +393,78 @@ func (ppu *Ppu) getSpriteColorAtPixel(x, y uint8, s Sprite) Color {
 	}
 }
 
+func (ppu *Ppu) get8x8SpriteColors(s Sprite, tile8x8 [8][8]uint8) [8][8]Color {
+	flipHorizontal := (s.attributes >> 6) & 1 == 1
+	flipVertical := (s.attributes >> 7) & 1 == 1
+
+	color8x8 := [8][8]Color{}
+
+	spriteColorPalette := ppu.getSpriteColorPalette(s.attributes & 0x03)
+
+	for i := 0; i < 8; i++ {
+		for j := 0; j < 8; j++ {
+			color8x8[i][j] = spriteColorPalette[tile8x8[i][j]]
+
+			// Check if sprites hide background
+			if tile8x8[i][j] == 0 {
+				color8x8[i][j].A = 0
+			}
+		}
+	}
+
+	if flipHorizontal {
+		for i := 0; i < len(color8x8); i++ {
+			for j := 0; j < len(color8x8[0]) / 2; j++ {
+				color8x8[i][j], color8x8[i][len(color8x8[0]) - 1 - j] = color8x8[i][len(color8x8[0]) - 1- j], color8x8[i][j]
+			}
+		}
+	}
+
+	if flipVertical {
+		for i := 0; i < len(color8x8) / 2; i++ {
+			color8x8[i], color8x8[len(color8x8) - 1 - i] = color8x8[len(color8x8) - 1 - i], color8x8[i]
+		}
+	}
+
+	return color8x8
+}
+
+func (ppu *Ppu) get8x16SpriteColors(s Sprite, tile8x16 [16][8]uint8) [16][8]Color {
+	flipHorizontal := (s.attributes >> 6) & 1 == 1
+	flipVertical := (s.attributes >> 7) & 1 == 1
+
+	color8x16 := [16][8]Color{}
+
+	spriteColorPalette := ppu.getSpriteColorPalette(s.attributes & 0x03)
+
+	for i := 0; i < 16; i++ {
+		for j := 0; j < 8; j++ {
+			color8x16[i][j] = spriteColorPalette[tile8x16[i][j]]
+
+			// Check if sprites hide background
+			if tile8x16[i][j] == 0 {
+				color8x16[i][j].A = 0
+			}
+		}
+	}
+
+	if flipHorizontal {
+		for i := 0; i < len(color8x16); i++ {
+			for j := 0; j < len(color8x16[0]) / 2; j++ {
+				color8x16[i][j], color8x16[i][len(color8x16[0]) - 1 - j] = color8x16[i][len(color8x16[0]) - 1- j], color8x16[i][j]
+			}
+		}
+	}
+
+	if flipVertical {
+		for i := 0; i < len(color8x16) / 2; i++ {
+			color8x16[i], color8x16[len(color8x16) - 1 - i] = color8x16[len(color8x16) - 1 - i], color8x16[i]
+		}
+	}
+
+	return color8x16
+}
+
 func (ppu *Ppu) GetColorAtPixel(x, y uint8) Color {
 	var color Color
 
@@ -462,7 +534,7 @@ func (ppu *Ppu) clearSpriteColors() {
 
 func (ppu *Ppu) setAllSpriteColors() {
 	// clear all previous sprites
-	ppu.clearSpriteColors()
+	//ppu.clearSpriteColors()
 
 	for spriteIdx := 0; spriteIdx < len(ppu.OAM); spriteIdx++ {
 		sprite := ppu.OAM[spriteIdx]
@@ -481,10 +553,43 @@ func (ppu *Ppu) setAllSpriteColors() {
 				ppu.setSpriteHit()
 			}
 
-			for tileX := uint8(0); tileX < xEnd; tileX++ {
-				for tileY := uint8(0); tileY < yEnd; tileY++ {
-					spriteColor := ppu.getSpriteColorAtPixel(tileX, tileY, sprite)
-					ppu.spriteColors[sprite.yCoord + tileY][sprite.xCoord + tileX] = spriteColor
+			var backgroundTilePos uint8
+			var backgroundTileBase uint16
+
+			if ppu.ppuctrl.spriteSize == 0 {
+				backgroundTileBase = uint16(ppu.ppuctrl.spritePatternTableAddr) * 0x1000
+				backgroundTilePos = sprite.tileNum
+			} else {
+				backgroundTileBase = uint16(sprite.tileNum & 1) * 0x1000
+				backgroundTilePos = sprite.tileNum & ^uint8(0x01)
+			}
+
+
+			var tile8x8 [8][8]uint8
+			var tile8x16 [16][8]uint8
+
+			if ppu.ppuctrl.spriteSize == 0 {
+				tile8x8 = ppu.get8x8Tile(backgroundTileBase, uint16(backgroundTilePos))
+			} else {
+				tile8x16 = ppu.get8x16Tile(backgroundTileBase, uint16(backgroundTilePos))
+			}
+
+			var spriteColor8x8 [8][8]Color
+			var spriteColor8x16 [16][8]Color
+
+			if ppu.ppuctrl.spriteSize == 0 {
+				spriteColor8x8 = ppu.get8x8SpriteColors(sprite, tile8x8)
+			} else {
+				spriteColor8x16 = ppu.get8x16SpriteColors(sprite, tile8x16)
+			}
+
+			for tileY := uint8(0); tileY < yEnd; tileY++ {
+				for tileX := uint8(0); tileX < xEnd; tileX++ {
+					if ppu.ppuctrl.spriteSize == 0 {
+						ppu.spriteColors[uint8(sprite.yCoord + tileY) % 240][uint8(sprite.xCoord + tileX) % 255] = spriteColor8x8[tileY][tileX]
+					} else {
+						ppu.spriteColors[uint8(sprite.yCoord + tileY) % 240][uint8(sprite.xCoord + tileX) % 255] = spriteColor8x16[tileY][tileX]
+					}
 				}
 			}
 		}
@@ -552,6 +657,11 @@ func (ppu *Ppu) PPURun() {
 					ppu.Frame.SetRGBA(x * 2 + i, int(sl) * 2 + j, color.RGBA{c.R, c.G, c.B, uint8(c.A)})
 				}
 			}
+
+			ppu.spriteColors[sl][x].R = 0
+			ppu.spriteColors[sl][x].G = 0
+			ppu.spriteColors[sl][x].B = 0
+			ppu.spriteColors[sl][x].A = 0
 		}
 	}
 
