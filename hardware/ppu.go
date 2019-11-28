@@ -4,6 +4,7 @@ import (
 	"encoding/binary"
 	"image"
 	"image/color"
+	"sync"
 )
 
 type Ppu struct {
@@ -32,6 +33,8 @@ type Ppu struct {
 	currentAttributes [0x21][2][2]uint8
 
 	spriteColors [240][256]Color
+
+	spriteWaitGroup sync.WaitGroup
 }
 
 type PpuCtrl struct {
@@ -176,13 +179,13 @@ func (ppu *Ppu) ClearVBlank() {
 }
 
 func (ppu *Ppu) get8x8Tile(base uint16, pos uint16) [8][8]uint8 {
-	b0 := []byte{}
+	b0 := [8]byte{}
 	for i := uint16(0); i < 8; i++ {
-		b0 = append(b0, ppu.Read8(base+(pos*0x10)+i))
+		b0[i] = ppu.Read8(base+(pos*0x10)+i)
 	}
-	b1 := []byte{}
+	b1 := [8]byte{}
 	for i := uint16(8); i < 16; i++ {
-		b1 = append(b1, ppu.Read8(base+(pos*0x10)+i))
+		b1[i - 8] = ppu.Read8(base+(pos*0x10)+i)
 	}
 
 	var result [8][8]uint8
@@ -536,14 +539,16 @@ func (ppu *Ppu) setAllSpriteColors() {
 	// clear all previous sprites
 	//ppu.clearSpriteColors()
 
+	isSprite8x8 := ppu.ppuctrl.spriteSize == 0
+
 	for spriteIdx := 0; spriteIdx < len(ppu.OAM); spriteIdx++ {
 		sprite := ppu.OAM[spriteIdx]
 		if sprite.yCoord > 0x00 && sprite.yCoord < 0xEF {
 			var ySpriteOffset uint8
-			if ppu.ppuctrl.spriteSize == 1 {
-				ySpriteOffset = 16
-			} else {
+			if isSprite8x8 {
 				ySpriteOffset = 8
+			} else {
+				ySpriteOffset = 16
 			}
 
 			xEnd := uint8(8)
@@ -556,7 +561,7 @@ func (ppu *Ppu) setAllSpriteColors() {
 			var backgroundTilePos uint8
 			var backgroundTileBase uint16
 
-			if ppu.ppuctrl.spriteSize == 0 {
+			if isSprite8x8 {
 				backgroundTileBase = uint16(ppu.ppuctrl.spritePatternTableAddr) * 0x1000
 				backgroundTilePos = sprite.tileNum
 			} else {
@@ -568,7 +573,7 @@ func (ppu *Ppu) setAllSpriteColors() {
 			var tile8x8 [8][8]uint8
 			var tile8x16 [16][8]uint8
 
-			if ppu.ppuctrl.spriteSize == 0 {
+			if isSprite8x8 {
 				tile8x8 = ppu.get8x8Tile(backgroundTileBase, uint16(backgroundTilePos))
 			} else {
 				tile8x16 = ppu.get8x16Tile(backgroundTileBase, uint16(backgroundTilePos))
@@ -577,7 +582,7 @@ func (ppu *Ppu) setAllSpriteColors() {
 			var spriteColor8x8 [8][8]Color
 			var spriteColor8x16 [16][8]Color
 
-			if ppu.ppuctrl.spriteSize == 0 {
+			if isSprite8x8 {
 				spriteColor8x8 = ppu.get8x8SpriteColors(sprite, tile8x8)
 			} else {
 				spriteColor8x16 = ppu.get8x16SpriteColors(sprite, tile8x16)
@@ -585,7 +590,7 @@ func (ppu *Ppu) setAllSpriteColors() {
 
 			for tileY := uint8(0); tileY < yEnd; tileY++ {
 				for tileX := uint8(0); tileX < xEnd; tileX++ {
-					if ppu.ppuctrl.spriteSize == 0 {
+					if isSprite8x8 {
 						ppu.spriteColors[uint8(sprite.yCoord + tileY) % 240][uint8(sprite.xCoord + tileX) % 255] = spriteColor8x8[tileY][tileX]
 					} else {
 						ppu.spriteColors[uint8(sprite.yCoord + tileY) % 240][uint8(sprite.xCoord + tileX) % 255] = spriteColor8x16[tileY][tileX]
@@ -594,6 +599,8 @@ func (ppu *Ppu) setAllSpriteColors() {
 			}
 		}
 	}
+
+	ppu.spriteWaitGroup.Done()
 }
 
 func (ppu *Ppu) is8x16Mode() bool {
@@ -634,6 +641,7 @@ func (ppu *Ppu) PPURun() {
 	}
 
 	if ppu.Cycle == 340 && ppu.Scanline < 240 {
+		ppu.spriteWaitGroup.Wait()
 		sl := ppu.Scanline
 		nameTableY := sl + uint16(ppu.ppuScrollLSB)
 
@@ -665,8 +673,9 @@ func (ppu *Ppu) PPURun() {
 		}
 	}
 
-	if ppu.Scanline == 245 {
-		ppu.setAllSpriteColors()
+	if ppu.Scanline == 241 {
+		ppu.spriteWaitGroup.Add(1)
+		go ppu.setAllSpriteColors()
 	}
 
 	if ppu.Scanline >= 257 && ppu.Scanline <= 320 {
