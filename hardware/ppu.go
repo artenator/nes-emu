@@ -430,27 +430,27 @@ func (ppu *Ppu) testGetSpriteColorAtPixel(x, y uint8) Color {
 	for id := 0; id < ppu.spriteCount; id++ {
 		sprite := ppu.currentSprites[id]
 
-			var ySpriteOffset uint8
-			if ppu.ppuctrl.spriteSize == 1 {
-				ySpriteOffset = 16
-			} else {
-				ySpriteOffset = 8
+		var ySpriteOffset uint8
+		if ppu.ppuctrl.spriteSize == 1 {
+			ySpriteOffset = 16
+		} else {
+			ySpriteOffset = 8
+		}
+
+		inRangeX := x >= sprite.xCoord && x < sprite.xCoord+8
+		inRangeY := y >= sprite.yCoord && y < sprite.yCoord+ySpriteOffset
+
+		if inRangeX && inRangeY {
+			// trigger sprite 0 hit
+			if id == 0 && ppu.ppumask.backgroundEnable && ppu.ppumask.spriteEnable {
+				ppu.setSpriteHit()
 			}
 
-			inRangeX := x >= sprite.xCoord && x < sprite.xCoord+8
-			inRangeY := y >= sprite.yCoord && y < sprite.yCoord+ySpriteOffset
-
-			if inRangeX && inRangeY {
-				// trigger sprite 0 hit
-				if id == 0 && ppu.ppumask.backgroundEnable && ppu.ppumask.spriteEnable {
-					ppu.setSpriteHit()
-				}
-
-				spriteColor := ppu.getSpriteColorAtPixel(x-sprite.xCoord, y-sprite.yCoord, sprite)
-				if spriteColor.A > 0 {
-					return spriteColor
-				}
+			spriteColor := ppu.getSpriteColorAtPixel(x-sprite.xCoord, y-sprite.yCoord, sprite)
+			if spriteColor.A > 0 {
+				return spriteColor
 			}
+		}
 	}
 
 	return Color{}
@@ -469,8 +469,8 @@ func (ppu *Ppu) fetchSprites() {
 
 	for _, sprite := range ppu.OAM {
 		isSpriteVisible := sprite.yCoord > 0x00 && sprite.yCoord < 0xEF
-		isSpriteOnCurrentScanline := ppu.Scanline - uint16(sprite.yCoord) < heightOffset
-		if isSpriteVisible && isSpriteOnCurrentScanline{
+		isSpriteOnCurrentScanline := ppu.Scanline +  1 - uint16(sprite.yCoord) < heightOffset
+		if isSpriteVisible && isSpriteOnCurrentScanline {
 			if ppu.spriteCount > 8 {
 				return
 			}
