@@ -30,6 +30,9 @@ type Ppu struct {
 
 	currentTiles [0x21][8][8]uint8
 	currentAttributes [0x21][2][2]uint8
+
+	currentSprites [0x40]Sprite
+	spriteCount int
 }
 
 type PpuCtrl struct {
@@ -424,8 +427,9 @@ func (ppu *Ppu) GetColorAtPixelOptimized(x, y uint8, backgroundTile [8][8]uint8,
 }
 
 func (ppu *Ppu) testGetSpriteColorAtPixel(x, y uint8) Color {
-	for id, sprite := range ppu.OAM {
-		if sprite.yCoord > 0x00 && sprite.yCoord < 0xEF {
+	for id := 0; id < ppu.spriteCount; id++ {
+		sprite := ppu.currentSprites[id]
+
 			var ySpriteOffset uint8
 			if ppu.ppuctrl.spriteSize == 1 {
 				ySpriteOffset = 16
@@ -447,10 +451,34 @@ func (ppu *Ppu) testGetSpriteColorAtPixel(x, y uint8) Color {
 					return spriteColor
 				}
 			}
-		}
 	}
 
 	return Color{}
+}
+
+func (ppu *Ppu) fetchSprites() {
+	ppu.spriteCount = 0
+
+	var heightOffset uint16
+
+	if ppu.ppuctrl.spriteSize == 0 {
+		heightOffset = 8
+	} else {
+		heightOffset = 16
+	}
+
+	for _, sprite := range ppu.OAM {
+		isSpriteVisible := sprite.yCoord > 0x00 && sprite.yCoord < 0xEF
+		isSpriteOnCurrentScanline := ppu.Scanline - uint16(sprite.yCoord) < heightOffset
+		if isSpriteVisible && isSpriteOnCurrentScanline{
+			if ppu.spriteCount > 8 {
+				return
+			}
+
+			ppu.currentSprites[ppu.spriteCount] = sprite
+			ppu.spriteCount++
+		}
+	}
 }
 
 func (ppu *Ppu) is8x16Mode() bool {
@@ -521,6 +549,10 @@ func (ppu *Ppu) PPURun() {
 	}
 	if ppu.Scanline == 241 && ppu.Cycle == 0 {
 		ppu.SetVBlank()
+	}
+
+	if ppu.Scanline <= 240 && ppu.Cycle == 257 {
+		ppu.fetchSprites()
 	}
 
 	ppu.Cycle = (ppu.Cycle + 1) % 341
