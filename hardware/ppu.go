@@ -33,6 +33,8 @@ type Ppu struct {
 
 	currentSprites [0x40]Sprite
 	spriteCount int
+
+	scalingFactor int
 }
 
 type PpuCtrl struct {
@@ -536,7 +538,12 @@ func (ppu *Ppu) PPURun() {
 			if c.A == 0 {
 				c = ppu.GetColorAtPixelOptimized(uint8(nameTableX % 256), uint8(nameTableY % 240), ppu.currentTiles[currentTileIdx], ppu.currentAttributes[currentTileIdx])
 			}
-			ppu.Frame.SetRGBA(x, int(sl), color.RGBA{c.R, c.G, c.B, uint8(c.A)})
+
+			for i := 0; i < ppu.scalingFactor; i++ {
+				for j := 0; j < ppu.scalingFactor; j++ {
+					ppu.Frame.SetRGBA(x * ppu.scalingFactor + i, int(sl) * ppu.scalingFactor + j, color.RGBA{c.R, c.G, c.B, uint8(c.A)})
+				}
+			}
 		}
 	}
 
@@ -578,9 +585,15 @@ func (ppu *Ppu) GenerateFrame() *image.RGBA {
 	for y := 0; y < 240; y++ {
 		for x := 0; x < 256; x++ {
 			c := ppu.GetColorAtPixel(uint8(x), uint8(y))
+
 			img.SetRGBA(x, y, color.RGBA{c.R, c.G, c.B, uint8(c.A)})
 		}
 	}
 
 	return img
+}
+
+func (ppu *Ppu) InitFrame(scalingFactor int) {
+	ppu.scalingFactor = scalingFactor
+	ppu.Frame = image.NewRGBA(image.Rect(0, 0, 256 * scalingFactor, 240 * scalingFactor))
 }

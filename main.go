@@ -69,9 +69,10 @@ func runNEStoFrame(nes hardware.NES, numOfInstructions *uint, lastFPS int) {
 }
 
 func run() {
+	scalingFactor := 2
 	cfg := pixelgl.WindowConfig{
 		Title:  "Arte's NES Emulator",
-		Bounds: pixel.R(0, 0, 256, 240),
+		Bounds: pixel.R(0, 0, float64(256 * scalingFactor), float64(240 * scalingFactor)),
 		VSync:  false,
 	}
 
@@ -100,6 +101,9 @@ func run() {
 
 	// initialize the apu
 	nes.APU.InitAPU(true)
+
+	// init ppu frame
+	nes.PPU.InitFrame(scalingFactor)
 
 	var (
 		numOfInstructions uint = 0
@@ -142,6 +146,7 @@ func run() {
 
 func main() {
 	//initLogOutput()
+	//defer profile.Start().Stop()
 	log.Println("Arte's NES Emu")
 	pixelgl.Run(run)
 }
