@@ -335,7 +335,7 @@ func (ppu *Ppu) getBackgroundColorAtPixelOptimized(x, y uint8, backgroundTile [8
 	return bgColor
 }
 
-func (ppu *Ppu) getSpriteColorAtPixel(x, y uint8, s Sprite) Color {
+func (ppu *Ppu) getColorFromSprite(x, y uint8, s Sprite) Color {
 	flipHorizontal := (s.attributes >> 6) & 1 == 1
 	flipVertical := (s.attributes >> 7) & 1 == 1
 
@@ -396,39 +396,7 @@ func (ppu *Ppu) getSpriteColorAtPixel(x, y uint8, s Sprite) Color {
 	}
 }
 
-func (ppu *Ppu) GetColorAtPixel(x, y uint8) Color {
-	var color Color
-
-	for _, sprite := range ppu.OAM {
-		if sprite.yCoord > 0x00 && sprite.yCoord < 0xEF {
-			inRangeX := x >= sprite.xCoord && x < sprite.xCoord+8
-			inRangeY := y >= sprite.yCoord && y < sprite.yCoord+8
-			if inRangeX && inRangeY {
-				spriteColor := ppu.getSpriteColorAtPixel(x - sprite.xCoord, y - sprite.yCoord, sprite)
-				if spriteColor.A > 0 {
-					return spriteColor
-				} else {
-					color = ppu.getBackgroundColorAtPixel(x, y)
-					return color
-				}
-			}
-		}
-	}
-
-	color = ppu.getBackgroundColorAtPixel(x, y)
-
-	return color
-}
-
-func (ppu *Ppu) GetColorAtPixelOptimized(x, y uint8, backgroundTile [8][8]uint8, attributeTile [2][2]uint8) Color {
-	var color Color
-
-	color = ppu.getBackgroundColorAtPixelOptimized(x, y, backgroundTile, attributeTile)
-
-	return color
-}
-
-func (ppu *Ppu) testGetSpriteColorAtPixel(x, y uint8) Color {
+func (ppu *Ppu) getSpriteColorAtPixel(x, y uint8) Color {
 	for id := 0; id < ppu.spriteCount; id++ {
 		sprite := ppu.currentSprites[id]
 
@@ -448,7 +416,7 @@ func (ppu *Ppu) testGetSpriteColorAtPixel(x, y uint8) Color {
 				ppu.setSpriteHit()
 			}
 
-			spriteColor := ppu.getSpriteColorAtPixel(x-sprite.xCoord, y-sprite.yCoord, sprite)
+			spriteColor := ppu.getColorFromSprite(x-sprite.xCoord, y-sprite.yCoord, sprite)
 			if spriteColor.A > 0 {
 				return spriteColor
 			}
@@ -534,9 +502,9 @@ func (ppu *Ppu) PPURun() {
 			currentTileIdx := (int(ppu.ppuScrollMSB % 8) + x) / 8 % 0x21
 
 
-			c := ppu.testGetSpriteColorAtPixel(uint8(x), uint8(sl))
+			c := ppu.getSpriteColorAtPixel(uint8(x), uint8(sl))
 			if c.A == 0 {
-				c = ppu.GetColorAtPixelOptimized(uint8(nameTableX % 256), uint8(nameTableY % 240), ppu.currentTiles[currentTileIdx], ppu.currentAttributes[currentTileIdx])
+				c = ppu.getBackgroundColorAtPixelOptimized(uint8(nameTableX % 256), uint8(nameTableY % 240), ppu.currentTiles[currentTileIdx], ppu.currentAttributes[currentTileIdx])
 			}
 
 			for i := 0; i < ppu.scalingFactor; i++ {
@@ -577,20 +545,6 @@ func (ppu *Ppu) RunPPUCycles(numOfCycles uint16) {
 	for i := uint16(0); i < numOfCycles; i++ {
 		ppu.PPURun()
 	}
-}
-
-func (ppu *Ppu) GenerateFrame() *image.RGBA {
-	var img *image.RGBA = image.NewRGBA(image.Rect(0, 0, 256, 240))
-
-	for y := 0; y < 240; y++ {
-		for x := 0; x < 256; x++ {
-			c := ppu.GetColorAtPixel(uint8(x), uint8(y))
-
-			img.SetRGBA(x, y, color.RGBA{c.R, c.G, c.B, uint8(c.A)})
-		}
-	}
-
-	return img
 }
 
 func (ppu *Ppu) InitFrame(scalingFactor int) {

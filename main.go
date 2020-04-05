@@ -19,20 +19,6 @@ import (
 var imd = imdraw.New(nil)
 var cpuInfo, _ = cpu.Info()
 
-type ColorAtPixel struct {
-	color hardware.Color
-	x uint8
-	y uint8
-}
-
-func drawPixel(c hardware.Color, x, y float64) {
-	colorRGBA := pixel.RGB(float64(c.R)/255, float64(c.G)/255, float64(c.B)/255)
-	imd.Color = colorRGBA
-	imd.Push(pixel.V(x+1, y+1))
-	imd.Push(pixel.V(x, y))
-	imd.Rectangle(0)
-}
-
 func initLogOutput() {
 	logFile, err := os.OpenFile("log.txt", os.O_CREATE | os.O_RDWR, 0666)
 	if err != nil {
