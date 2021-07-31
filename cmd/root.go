@@ -17,7 +17,7 @@ import (
 )
 
 //initLogOutput()
-//defer profile.Start().Stop()
+
 
 var rootCmd = &cobra.Command{
 	Use:   "nes-emu",
@@ -49,6 +49,7 @@ var imd = imdraw.New(nil)
 var cpuInfo, _ = cpu.Info()
 
 func configAndRunNES(cmd *cobra.Command, args []string) {
+	//defer profile.Start().Stop()
 	scalingFactor, err := cmd.Flags().GetInt("scale")
 	if err != nil {
 		panic("invalid scaling factor")
@@ -92,6 +93,8 @@ func configAndRunNES(cmd *cobra.Command, args []string) {
 		lastFPS = 0
 	)
 
+	cam := pixel.IM.Scaled(win.Bounds().Center(), float64(scalingFactor))
+
 	// main drawing loop
 	for !win.Closed() {
 		imd.Clear()
@@ -108,6 +111,8 @@ func configAndRunNES(cmd *cobra.Command, args []string) {
 
 		sprite.Draw(win, pixel.IM.Moved(win.Bounds().Center()))
 
+		win.SetMatrix(cam)
+		
 		win.Update()
 
 		frames++

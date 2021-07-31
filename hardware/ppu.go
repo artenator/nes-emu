@@ -507,11 +507,12 @@ func (ppu *Ppu) PPURun() {
 				c = ppu.getBackgroundColorAtPixelOptimized(uint8(nameTableX % 256), uint8(nameTableY % 240), ppu.currentTiles[currentTileIdx], ppu.currentAttributes[currentTileIdx])
 			}
 
-			for i := 0; i < ppu.scalingFactor; i++ {
-				for j := 0; j < ppu.scalingFactor; j++ {
-					ppu.Frame.SetRGBA(x * ppu.scalingFactor + i, int(sl) * ppu.scalingFactor + j, color.RGBA{c.R, c.G, c.B, uint8(c.A)})
-				}
-			}
+			ppu.Frame.SetRGBA(x, int(sl), color.RGBA{c.R, c.G, c.B, uint8(c.A)})
+			//for i := 0; i < ppu.scalingFactor; i++ {
+			//	for j := 0; j < ppu.scalingFactor; j++ {
+			//		ppu.Frame.SetRGBA(x * ppu.scalingFactor + i, int(sl) * ppu.scalingFactor + j, color.RGBA{c.R, c.G, c.B, uint8(c.A)})
+			//	}
+			//}
 		}
 	}
 
@@ -549,5 +550,5 @@ func (ppu *Ppu) RunPPUCycles(numOfCycles uint16) {
 
 func (ppu *Ppu) InitFrame(scalingFactor int) {
 	ppu.scalingFactor = scalingFactor
-	ppu.Frame = image.NewRGBA(image.Rect(0, 0, 256 * scalingFactor, 240 * scalingFactor))
+	ppu.Frame = image.NewRGBA(image.Rect(0, 0, 256, 240))
 }

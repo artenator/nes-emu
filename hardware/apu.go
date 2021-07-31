@@ -123,11 +123,14 @@ var lengthTable = [32]uint8{
 func (apu *Apu) InitAPU(initContext bool) {
 	// init audio player
 	apu.Cyclelimit = 40
-	var err error
+
 	if initContext {
-		if apu.audioDevice, err = oto.NewPlayer(44100, 1, 1, 4096); err != nil {
+		context, err := oto.NewContext(44100, 1, 1, 4096);
+		if err != nil {
 			log.Fatal("Audio could not be initialized")
 		}
+
+		apu.audioDevice = context.NewPlayer()
 	}
 	apu.enableDMC = false
 	apu.enableNoise = false
