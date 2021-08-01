@@ -16,7 +16,6 @@ import (
 	"time"
 )
 
-//initLogOutput()
 
 
 var rootCmd = &cobra.Command{
@@ -50,6 +49,8 @@ var cpuInfo, _ = cpu.Info()
 
 func configAndRunNES(cmd *cobra.Command, args []string) {
 	//defer profile.Start().Stop()
+	//initLogOutput()
+
 	scalingFactor, err := cmd.Flags().GetInt("scale")
 	if err != nil {
 		panic("invalid scaling factor")
@@ -112,7 +113,7 @@ func configAndRunNES(cmd *cobra.Command, args []string) {
 		sprite.Draw(win, pixel.IM.Moved(win.Bounds().Center()))
 
 		win.SetMatrix(cam)
-		
+
 		win.Update()
 
 		frames++

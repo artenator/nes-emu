@@ -177,171 +177,171 @@ func (cpu *Cpu) RunInstruction(instr instruction, doLog bool) {
 	// increment the pc based on instruction size
 	cpu.PC += uint16(instr.bytes)
 
-	switch instr.assemblyCode {
-	case "ADC":
+	switch instr.code {
+	case ADC:
 		value := cpu.getValue(instr.mode, addr, arg)
 		cpu.ADC(instr, addr, value)
-	case "AND":
+	case AND:
 		value := cpu.getValue(instr.mode, addr, arg)
 		cpu.AND(instr, addr, value)
-	case "ASL":
+	case ASL:
 		value := cpu.getValue(instr.mode, addr, arg)
 		cpu.ASL(instr, addr, value)
-	case "BCC":
+	case BCC:
 		value := cpu.getValue(instr.mode, addr, arg)
 		cpu.BCC(instr, addr, value)
-	case "BCS":
+	case BCS:
 		value := cpu.getValue(instr.mode, addr, arg)
 		cpu.BCS(instr, addr, value)
-	case "BEQ":
+	case BEQ:
 		value := cpu.getValue(instr.mode, addr, arg)
 		cpu.BEQ(instr, addr, value)
-	case "BIT":
+	case BIT:
 		value := cpu.getValue(instr.mode, addr, arg)
 		cpu.BIT(instr, addr, value)
-	case "BMI":
+	case BMI:
 		value := cpu.getValue(instr.mode, addr, arg)
 		cpu.BMI(instr, addr, value)
-	case "BNE":
+	case BNE:
 		value := cpu.getValue(instr.mode, addr, arg)
 		cpu.BNE(instr, addr, value)
-	case "BPL":
+	case BPL:
 		value := cpu.getValue(instr.mode, addr, arg)
 		cpu.BPL(instr, addr, value)
-	case "BRK":
+	case BRK:
 		value := cpu.getValue(instr.mode, addr, arg)
 		cpu.BRK(instr, addr, value)
-	case "BVC":
+	case BVC:
 		value := cpu.getValue(instr.mode, addr, arg)
 		cpu.BVC(instr, addr, value)
-	case "BVS":
+	case BVS:
 		value := cpu.getValue(instr.mode, addr, arg)
 		cpu.BVS(instr, addr, value)
-	case "CLC":
+	case CLC:
 		cpu.CLC(instr, addr)
-	case "CLD":
+	case CLD:
 		cpu.CLD(instr, addr)
-	case "CLI":
+	case CLI:
 		cpu.CLI(instr, addr)
-	case "CLV":
+	case CLV:
 		cpu.CLV(instr, addr)
-	case "CMP":
+	case CMP:
 		value := cpu.getValue(instr.mode, addr, arg)
 		cpu.CMP(instr, addr, value)
-	case "CPX":
+	case CPX:
 		value := cpu.getValue(instr.mode, addr, arg)
 		cpu.CPX(instr, addr, value)
-	case "CPY":
+	case CPY:
 		value := cpu.getValue(instr.mode, addr, arg)
 		cpu.CPY(instr, addr, value)
-	case "DCP":
+	case DCP:
 		value := cpu.getValue(instr.mode, addr, arg)
 		cpu.DCP(instr, addr, value)
-	case "DEC":
+	case DEC:
 		value := cpu.getValue(instr.mode, addr, arg)
 		cpu.DEC(instr, addr, value)
-	case "DEX":
+	case DEX:
 		cpu.DEX(instr, addr)
-	case "DEY":
+	case DEY:
 		cpu.DEY(instr, addr)
-	case "EOR":
+	case EOR:
 		value := cpu.getValue(instr.mode, addr, arg)
 		cpu.EOR(instr, addr, value)
-	case "INC":
+	case INC:
 		value := cpu.getValue(instr.mode, addr, arg)
 		cpu.INC(instr, addr, value)
-	case "INX":
+	case INX:
 		cpu.INX(instr, addr)
-	case "INY":
+	case INY:
 		cpu.INY(instr, addr)
-	case "ISC":
+	case ISC:
 		value := cpu.getValue(instr.mode, addr, arg)
 		cpu.ISC(instr, addr, value)
-	case "JMP":
+	case JMP:
 		cpu.JMP(instr, addr)
-	case "JSR":
+	case JSR:
 		cpu.JSR(instr, addr)
-	case "LAX":
+	case LAX:
 		value := cpu.getValue(instr.mode, addr, arg)
 		cpu.LAX(instr, addr, value)
-	case "LDA":
+	case LDA:
 		value := cpu.getValue(instr.mode, addr, arg)
 		cpu.LDA(instr, addr, value)
-	case "LDX":
+	case LDX:
 		value := cpu.getValue(instr.mode, addr, arg)
 		cpu.LDX(instr, addr, value)
-	case "LDY":
+	case LDY:
 		value := cpu.getValue(instr.mode, addr, arg)
 		cpu.LDY(instr, addr, value)
-	case "LSR":
+	case LSR:
 		value := cpu.getValue(instr.mode, addr, arg)
 		cpu.LSR(instr, addr, value)
-	case "NOP":
+	case NOP:
 		cpu.NOP()
-	case "ORA":
+	case ORA:
 		value := cpu.getValue(instr.mode, addr, arg)
 		cpu.ORA(instr, addr, value)
-	case "PHA":
+	case PHA:
 		cpu.PHA()
-	case "PHP":
+	case PHP:
 		cpu.PHP()
-	case "PLA":
+	case PLA:
 		cpu.PLA()
-	case "PLP":
+	case PLP:
 		cpu.PLP()
-	case "RLA":
+	case RLA:
 		value := cpu.getValue(instr.mode, addr, arg)
 		cpu.RLA(instr, addr, value)
-	case "ROL":
+	case ROL:
 		value := cpu.getValue(instr.mode, addr, arg)
 		cpu.ROL(instr, addr, value)
-	case "ROR":
+	case ROR:
 		value := cpu.getValue(instr.mode, addr, arg)
 		cpu.ROR(instr, addr, value)
-	case "RRA":
+	case RRA:
 		value := cpu.getValue(instr.mode, addr, arg)
 		cpu.RRA(instr, addr, value)
-	case "RTI":
+	case RTI:
 		cpu.RTI()
-	case "RTS":
+	case RTS:
 		cpu.RTS()
-	case "SAX":
+	case SAX:
 		cpu.SAX(instr, addr)
-	case "SBC":
+	case SBC:
 		value := cpu.getValue(instr.mode, addr, arg)
 		cpu.SBC(instr, addr, value)
-	case "SEC":
+	case SEC:
 		cpu.SEC()
-	case "SED":
+	case SED:
 		cpu.SED()
-	case "SEI":
+	case SEI:
 		cpu.SEI()
-	case "SLO":
+	case SLO:
 		value := cpu.getValue(instr.mode, addr, arg)
 		cpu.SLO(instr, addr, value)
-	case "SRE":
+	case SRE:
 		value := cpu.getValue(instr.mode, addr, arg)
 		cpu.SRE(instr, addr, value)
-	case "STA":
+	case STA:
 		cpu.STA(instr, addr)
-	case "STX":
+	case STX:
 		cpu.STX(instr, addr)
-	case "STY":
+	case STY:
 		cpu.STY(instr, addr)
-	case "TAX":
+	case TAX:
 		cpu.TAX()
-	case "TAY":
+	case TAY:
 		cpu.TAY()
-	case "TSX":
+	case TSX:
 		cpu.TSX()
-	case "TXA":
+	case TXA:
 		cpu.TXA()
-	case "TXS":
+	case TXS:
 		cpu.TXS()
-	case "TYA":
+	case TYA:
 		cpu.TYA()
 	default:
-		//log.Fatal(errors.New("Fatal: " + string(instr.assemblyCode) + " is not a valid instruction code."))
+		log.Fatal(errors.New("Fatal: " + string(instr.assemblyCode) + " is not a valid instruction code."))
 	}
 
 	cpu.totalCycles += uint64(instr.Cycles)

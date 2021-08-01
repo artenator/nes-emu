@@ -4,6 +4,9 @@ type instruction struct {
 	// Assembly Language Form
 	assemblyCode string
 
+	// Assembly Code Enum Form
+	code uint8
+
 	// Opcode of the instruction
 	opcode uint8
 
@@ -100,10 +103,91 @@ const (
 
 )
 
+const (
+	ADC = iota
+	AND
+	ASL
+	BCC
+	BCS
+	BEQ
+	BIT
+	BMI
+	BNE
+	BPL
+	BRK
+	BVC
+	BVS
+	CLC
+	CLD
+	CLI
+	CLV
+	CMP
+	CPX
+	CPY
+	DCP
+	DEC
+	DEX
+	DEY
+	EOR
+	INC
+	INX
+	INY
+	ISC
+	JMP
+	JSR
+	LAX
+	LDA
+	LDX
+	LDY
+	LSR
+	NOP
+	ORA
+	PHA
+	PHP
+	PLA
+	PLP
+	RLA
+	ROL
+	ROR
+	RRA
+	RTI
+	RTS
+	SAX
+	SBC
+	SEC
+	SED
+	SEI
+	SLO
+	SRE
+	STA
+	STX
+	STY
+	TAX
+	TAY
+	TSX
+	TXA
+	TXS
+	TYA
+
+	// not used or not implemented?
+	KIL
+	ANC
+	ALR
+	ARR
+	XAA
+	AXA
+	TAS
+	SHY
+	SHX
+	LAS
+	AXS
+)
+
 var Instructions = [256]instruction{
 	// BRK - (Implied)
 	instruction{
 		"BRK",
+		BRK,
 		0x00,
 		1,
 		7,
@@ -111,6 +195,7 @@ var Instructions = [256]instruction{
 	// ORA - (Indirect, X)
 	instruction{
 		"ORA",
+		ORA,
 		0x01,
 		2,
 		6,
@@ -118,6 +203,7 @@ var Instructions = [256]instruction{
 	// KIL - Implied
 	instruction{
 		"KIL",
+		KIL,
 		0x02,
 		1,
 		0,
@@ -125,6 +211,7 @@ var Instructions = [256]instruction{
 	// SLO - (indirect, X)
 	instruction{
 		"SLO",
+		SLO,
 		0x03,
 		2,
 		8,
@@ -132,6 +219,7 @@ var Instructions = [256]instruction{
 	// NOP - Zero Page
 	instruction{
 		"NOP",
+		NOP,
 		0x04,
 		2,
 		3,
@@ -139,6 +227,7 @@ var Instructions = [256]instruction{
 	// ORA - Zero Page
 	instruction{
 		"ORA",
+		ORA,
 		0x05,
 		2,
 		3,
@@ -146,6 +235,7 @@ var Instructions = [256]instruction{
 	// ASL - Zero Page
 	instruction{
 		"ASL",
+		ASL,
 		0x06,
 		2,
 		5,
@@ -153,6 +243,7 @@ var Instructions = [256]instruction{
 	// SLO - Zero Page
 	instruction{
 		"SLO",
+		SLO,
 		0x07,
 		2,
 		5,
@@ -160,6 +251,7 @@ var Instructions = [256]instruction{
 	// PHP - Zero Page
 	instruction{
 		"PHP",
+		PHP,
 		0x08,
 		1,
 		3,
@@ -167,6 +259,7 @@ var Instructions = [256]instruction{
 	// ORA - Immediate
 	instruction{
 		"ORA",
+		ORA,
 		0x09,
 		2,
 		2,
@@ -174,6 +267,7 @@ var Instructions = [256]instruction{
 	// ASL - Accumulator
 	instruction{
 		"ASL",
+		ASL,
 		0x0A,
 		1,
 		2,
@@ -181,6 +275,7 @@ var Instructions = [256]instruction{
 	// ANC - Immediate
 	instruction{
 		"ANC",
+		ANC,
 		0x0B,
 		2,
 		2,
@@ -188,6 +283,7 @@ var Instructions = [256]instruction{
 	// NOP - Absolute
 	instruction{
 		"NOP",
+		NOP,
 		0x0C,
 		3,
 		4,
@@ -195,6 +291,7 @@ var Instructions = [256]instruction{
 	// ORA - Absolute
 	instruction{
 		"ORA",
+		ORA,
 		0x0D,
 		3,
 		3,
@@ -202,6 +299,7 @@ var Instructions = [256]instruction{
 	// ASL - Absolute
 	instruction{
 		"ASL",
+		ASL,
 		0x0E,
 		3,
 		6,
@@ -209,6 +307,7 @@ var Instructions = [256]instruction{
 	// SLO - Absolute
 	instruction{
 		"SLO",
+		SLO,
 		0x0F,
 		3,
 		6,
@@ -216,6 +315,7 @@ var Instructions = [256]instruction{
 	// BPL - Relative
 	instruction{
 		"BPL",
+		BPL,
 		0x10,
 		2,
 		2,
@@ -223,6 +323,7 @@ var Instructions = [256]instruction{
 	// ORA - (Indirect), Y
 	instruction{
 		"ORA",
+		ORA,
 		0x11,
 		2,
 		5,
@@ -230,6 +331,7 @@ var Instructions = [256]instruction{
 	// KIL - Implied
 	instruction{
 		"KIL",
+		KIL,
 		0x12,
 		1,
 		0,
@@ -237,6 +339,7 @@ var Instructions = [256]instruction{
 	// SLO - (Indirect), Y
 	instruction{
 		"SLO",
+		SLO,
 		0x13,
 		2,
 		8,
@@ -244,6 +347,7 @@ var Instructions = [256]instruction{
 	// NOP - Zero Page
 	instruction{
 		"NOP",
+		NOP,
 		0x14,
 		2,
 		4,
@@ -251,6 +355,7 @@ var Instructions = [256]instruction{
 	// ORA - Zero Page X
 	instruction{
 		"ORA",
+		ORA,
 		0x15,
 		2,
 		4,
@@ -258,6 +363,7 @@ var Instructions = [256]instruction{
 	// ASL - Zero Page X
 	instruction{
 		"ASL",
+		ASL,
 		0x16,
 		2,
 		6,
@@ -265,6 +371,7 @@ var Instructions = [256]instruction{
 	// SLO - Zero Page X
 	instruction{
 		"SLO",
+		SLO,
 		0x17,
 		2,
 		6,
@@ -272,6 +379,7 @@ var Instructions = [256]instruction{
 	// CLC - Implied
 	instruction{
 		"CLC",
+		CLC,
 		0x18,
 		1,
 		2,
@@ -279,6 +387,7 @@ var Instructions = [256]instruction{
 	// ORA - Absolute, Y
 	instruction{
 		"ORA",
+		ORA,
 		0x19,
 		3,
 		4,
@@ -286,6 +395,7 @@ var Instructions = [256]instruction{
 	// NOP - Implied
 	instruction{
 		"NOP",
+		NOP,
 		0x1A,
 		1,
 		2,
@@ -293,6 +403,7 @@ var Instructions = [256]instruction{
 	// SLO - Absolute, Y
 	instruction{
 		"SLO",
+		SLO,
 		0x1B,
 		3,
 		7,
@@ -300,6 +411,7 @@ var Instructions = [256]instruction{
 	// NOP - Absolute, X
 	instruction{
 		"NOP",
+		NOP,
 		0x1C,
 		3,
 		4,
@@ -307,6 +419,7 @@ var Instructions = [256]instruction{
 	// ORA - Absolute, X
 	instruction{
 		"ORA",
+		ORA,
 		0x1D,
 		3,
 		4,
@@ -314,6 +427,7 @@ var Instructions = [256]instruction{
 	// ASL - Absolute, X
 	instruction{
 		"ASL",
+		ASL,
 		0x1E,
 		3,
 		7,
@@ -321,6 +435,7 @@ var Instructions = [256]instruction{
 	// SLO - Absolute, X
 	instruction{
 		"SLO",
+		SLO,
 		0x1F,
 		3,
 		7,
@@ -328,6 +443,7 @@ var Instructions = [256]instruction{
 	// JSR - Absolute
 	instruction{
 		"JSR",
+		JSR,
 		0x20,
 		3,
 		6,
@@ -335,6 +451,7 @@ var Instructions = [256]instruction{
 	// AND - (Indirect, X)
 	instruction{
 		"AND",
+		AND,
 		0x21,
 		2,
 		6,
@@ -342,6 +459,7 @@ var Instructions = [256]instruction{
 	// KIL - Implied
 	instruction{
 		"KIL",
+		KIL,
 		0x22,
 		1,
 		0,
@@ -349,6 +467,7 @@ var Instructions = [256]instruction{
 	// RLA - (Indirect, X)
 	instruction{
 		"RLA",
+		RLA,
 		0x23,
 		2,
 		8,
@@ -356,6 +475,7 @@ var Instructions = [256]instruction{
 	// BIT - Zero Page
 	instruction{
 		"BIT",
+		BIT,
 		0x24,
 		2,
 		3,
@@ -363,6 +483,7 @@ var Instructions = [256]instruction{
 	// AND - Zero Page
 	instruction{
 		"AND",
+		AND,
 		0x25,
 		2,
 		3,
@@ -370,6 +491,7 @@ var Instructions = [256]instruction{
 	// ROL - Zero Page
 	instruction{
 		"ROL",
+		ROL,
 		0x26,
 		2,
 		5,
@@ -377,6 +499,7 @@ var Instructions = [256]instruction{
 	// RLA - Zero Page
 	instruction{
 		"RLA",
+		RLA,
 		0x27,
 		2,
 		5,
@@ -384,6 +507,7 @@ var Instructions = [256]instruction{
 	// PLP - Implied
 	instruction{
 		"PLP",
+		PLP,
 		0x28,
 		1,
 		4,
@@ -391,6 +515,7 @@ var Instructions = [256]instruction{
 	// AND - Immediate
 	instruction{
 		"AND",
+		AND,
 		0x29,
 		2,
 		2,
@@ -398,6 +523,7 @@ var Instructions = [256]instruction{
 	// ROL - Accumulator
 	instruction{
 		"ROL",
+		ROL,
 		0x2A,
 		1,
 		2,
@@ -405,6 +531,7 @@ var Instructions = [256]instruction{
 	// ANC - Immediate
 	instruction{
 		"ANC",
+		ANC,
 		0x2B,
 		2,
 		2,
@@ -412,6 +539,7 @@ var Instructions = [256]instruction{
 	// BIT - Absolute
 	instruction{
 		"BIT",
+		BIT,
 		0x2C,
 		3,
 		4,
@@ -419,6 +547,7 @@ var Instructions = [256]instruction{
 	// AND - Absolute
 	instruction{
 		"AND",
+		AND,
 		0x2D,
 		3,
 		6,
@@ -426,6 +555,7 @@ var Instructions = [256]instruction{
 	// ROL - Absolute
 	instruction{
 		"ROL",
+		ROL,
 		0x2E,
 		3,
 		6,
@@ -433,6 +563,7 @@ var Instructions = [256]instruction{
 	// RLA - Absolute
 	instruction{
 		"RLA",
+		RLA,
 		0x2F,
 		3,
 		6,
@@ -440,6 +571,7 @@ var Instructions = [256]instruction{
 	// BMI - Relative
 	instruction{
 		"BMI",
+		BMI,
 		0x30,
 		2,
 		2,
@@ -447,6 +579,7 @@ var Instructions = [256]instruction{
 	// AND - (Indirect), Y
 	instruction{
 		"AND",
+		AND,
 		0x31,
 		2,
 		5,
@@ -454,6 +587,7 @@ var Instructions = [256]instruction{
 	// KIL - Implied
 	instruction{
 		"KIL",
+		KIL,
 		0x32,
 		1,
 		0,
@@ -461,6 +595,7 @@ var Instructions = [256]instruction{
 	// RLA - (Indirect), Y
 	instruction{
 		"RLA",
+		RLA,
 		0x33,
 		2,
 		8,
@@ -468,6 +603,7 @@ var Instructions = [256]instruction{
 	// NOP - Zero Page X
 	instruction{
 		"NOP",
+		NOP,
 		0x34,
 		2,
 		4,
@@ -475,6 +611,7 @@ var Instructions = [256]instruction{
 	// AND - Zero Page X
 	instruction{
 		"AND",
+		AND,
 		0x35,
 		2,
 		4,
@@ -482,6 +619,7 @@ var Instructions = [256]instruction{
 	// ROL - Zero Page X
 	instruction{
 		"ROL",
+		ROL,
 		0x36,
 		2,
 		6,
@@ -489,6 +627,7 @@ var Instructions = [256]instruction{
 	// RLA - (Indrect), Y
 	instruction{
 		"RLA",
+		RLA,
 		0x37,
 		2,
 		6,
@@ -496,6 +635,7 @@ var Instructions = [256]instruction{
 	// SEC - Implied
 	instruction{
 		"SEC",
+		SEC,
 		0x38,
 		1,
 		2,
@@ -503,6 +643,7 @@ var Instructions = [256]instruction{
 	// AND - Absolute Y
 	instruction{
 		"AND",
+		AND,
 		0x39,
 		3,
 		4,
@@ -510,6 +651,7 @@ var Instructions = [256]instruction{
 	// NOP - Implied
 	instruction{
 		"NOP",
+		NOP,
 		0x3A,
 		1,
 		2,
@@ -517,6 +659,7 @@ var Instructions = [256]instruction{
 	// RLA - Absolute Y
 	instruction{
 		"RLA",
+		RLA,
 		0x3B,
 		3,
 		7,
@@ -524,6 +667,7 @@ var Instructions = [256]instruction{
 	// NOP - Implied
 	instruction{
 		"NOP",
+		NOP,
 		0x3C,
 		3,
 		2,
@@ -531,6 +675,7 @@ var Instructions = [256]instruction{
 	// AND - Absolute X
 	instruction{
 		"AND",
+		AND,
 		0x3D,
 		3,
 		4,
@@ -538,6 +683,7 @@ var Instructions = [256]instruction{
 	// ROL - Absolute X
 	instruction{
 		"ROL",
+		ROL,
 		0x3E,
 		3,
 		7,
@@ -545,6 +691,7 @@ var Instructions = [256]instruction{
 	// RLA - Absolute X
 	instruction{
 		"RLA",
+		RLA,
 		0x3F,
 		3,
 		7,
@@ -552,6 +699,7 @@ var Instructions = [256]instruction{
 	// RTI - Implied
 	instruction{
 		"RTI",
+		RTI,
 		0x40,
 		1,
 		6,
@@ -559,13 +707,15 @@ var Instructions = [256]instruction{
 	// EOR - (Indirect, X)
 	instruction{
 		"EOR",
+		EOR,
 		0x41,
 		2,
 		5,
 		indX,},
-	// KIL - Implied
+	// EOR - Implied
 	instruction{
 		"EOR",
+		EOR,
 		0x42,
 		1,
 		0,
@@ -573,6 +723,7 @@ var Instructions = [256]instruction{
 	// SRE - (Indirect, X)
 	instruction{
 		"SRE",
+		SRE,
 		0x43,
 		2,
 		8,
@@ -580,6 +731,7 @@ var Instructions = [256]instruction{
 	// NOP - Zero Page
 	instruction{
 		"NOP",
+		NOP,
 		0x44,
 		2,
 		3,
@@ -587,6 +739,7 @@ var Instructions = [256]instruction{
 	// EOR - Zero Page
 	instruction{
 		"EOR",
+		EOR,
 		0x45,
 		2,
 		3,
@@ -594,6 +747,7 @@ var Instructions = [256]instruction{
 	// LSR - Zero Page
 	instruction{
 		"LSR",
+		LSR,
 		0x46,
 		2,
 		5,
@@ -601,6 +755,7 @@ var Instructions = [256]instruction{
 	// SRE - Zero Page
 	instruction{
 		"SRE",
+		SRE,
 		0x47,
 		2,
 		5,
@@ -608,6 +763,7 @@ var Instructions = [256]instruction{
 	// PHA - Implied
 	instruction{
 		"PHA",
+		PHA,
 		0x48,
 		1,
 		3,
@@ -615,6 +771,7 @@ var Instructions = [256]instruction{
 	// EOR - Immediate
 	instruction{
 		"EOR",
+		EOR,
 		0x49,
 		2,
 		2,
@@ -622,6 +779,7 @@ var Instructions = [256]instruction{
 	// LSR - Accumulator
 	instruction{
 		"LSR",
+		LSR,
 		0x4A,
 		1,
 		2,
@@ -629,6 +787,7 @@ var Instructions = [256]instruction{
 	// ALR - Immediate
 	instruction{
 		"ALR",
+		ALR,
 		0x4B,
 		2,
 		2,
@@ -636,6 +795,7 @@ var Instructions = [256]instruction{
 	// JMP - Absolute
 	instruction{
 		"JMP",
+		JMP,
 		0x4C,
 		3,
 		3,
@@ -643,6 +803,7 @@ var Instructions = [256]instruction{
 	// EOR - Absolute 
 	instruction{
 		"EOR",
+		EOR,
 		0x4D,
 		3,
 		4,
@@ -650,6 +811,7 @@ var Instructions = [256]instruction{
 	// LSR - Absolute 
 	instruction{
 		"LSR",
+		LSR,
 		0x4E,
 		3,
 		6,
@@ -657,6 +819,7 @@ var Instructions = [256]instruction{
 	// SRE - Absolute 
 	instruction{
 		"SRE",
+		SRE,
 		0x4F,
 		3,
 		6,
@@ -664,6 +827,7 @@ var Instructions = [256]instruction{
 	// BVC - Relative
 	instruction{
 		"BVC",
+		BVC,
 		0x50,
 		2,
 		2,
@@ -671,6 +835,7 @@ var Instructions = [256]instruction{
 	// EOR - (Indirect), Y
 	instruction{
 		"EOR",
+		EOR,
 		0x51,
 		2,
 		5,
@@ -678,6 +843,7 @@ var Instructions = [256]instruction{
 	// KIL - Implied 
 	instruction{
 		"KIL",
+		KIL,
 		0x52,
 		1,
 		0,
@@ -685,6 +851,7 @@ var Instructions = [256]instruction{
 	// SRE - (Indirect), Y
 	instruction{
 		"SRE",
+		SRE,
 		0x53,
 		2,
 		8,
@@ -692,6 +859,7 @@ var Instructions = [256]instruction{
 	// NOP - Zero Page X 
 	instruction{
 		"NOP",
+		NOP,
 		0x54,
 		2,
 		4,
@@ -699,6 +867,7 @@ var Instructions = [256]instruction{
 	// EOR - Zero Page X 
 	instruction{
 		"EOR",
+		EOR,
 		0x55,
 		2,
 		4,
@@ -706,6 +875,7 @@ var Instructions = [256]instruction{
 	// LSR - Zero Page X 
 	instruction{
 		"LSR",
+		LSR,
 		0x56,
 		2,
 		6,
@@ -713,6 +883,7 @@ var Instructions = [256]instruction{
 	// SRE - Zero Page X 
 	instruction{
 		"SRE",
+		SRE,
 		0x57,
 		2,
 		6,
@@ -720,6 +891,7 @@ var Instructions = [256]instruction{
 	// CLI - Implied
 	instruction{
 		"CLI",
+		CLI,
 		0x58,
 		1,
 		2,
@@ -727,6 +899,7 @@ var Instructions = [256]instruction{
 	// EOR - Absolute Y
 	instruction{
 		"EOR",
+		EOR,
 		0x59,
 		3,
 		4,
@@ -734,6 +907,7 @@ var Instructions = [256]instruction{
 	// NOP - Implied 
 	instruction{
 		"NOP",
+		NOP,
 		0x5A,
 		1,
 		2,
@@ -741,6 +915,7 @@ var Instructions = [256]instruction{
 	// SRE - Absolute Y
 	instruction{
 		"SRE",
+		SRE,
 		0x5B,
 		3,
 		7,
@@ -748,6 +923,7 @@ var Instructions = [256]instruction{
 	// NOP - Absolute X
 	instruction{
 		"NOP",
+		NOP,
 		0x5C,
 		3,
 		4,
@@ -755,6 +931,7 @@ var Instructions = [256]instruction{
 	// EOR - Absolute X
 	instruction{
 		"EOR",
+		EOR,
 		0x5D,
 		3,
 		4,
@@ -762,6 +939,7 @@ var Instructions = [256]instruction{
 	// LSR - Absolute X
 	instruction{
 		"LSR",
+		LSR,
 		0x5E,
 		3,
 		7,
@@ -769,6 +947,7 @@ var Instructions = [256]instruction{
 	// SRE - Absolute X
 	instruction{
 		"SRE",
+		SRE,
 		0x5F,
 		3,
 		7,
@@ -776,6 +955,7 @@ var Instructions = [256]instruction{
 	// RTS - Implied 
 	instruction{
 		"RTS",
+		RTS,
 		0x60,
 		1,
 		6,
@@ -783,6 +963,7 @@ var Instructions = [256]instruction{
 	// ADC - (Indirect, X) 
 	instruction{
 		"ADC",
+		ADC,
 		0x61,
 		2,
 		6,
@@ -790,6 +971,7 @@ var Instructions = [256]instruction{
 	// KIL - Implied 
 	instruction{
 		"KIL",
+		KIL,
 		0x62,
 		1,
 		0,
@@ -797,6 +979,7 @@ var Instructions = [256]instruction{
 	// RRA - (Indirect, X) 
 	instruction{
 		"RRA",
+		RRA,
 		0x63,
 		2,
 		8,
@@ -804,6 +987,7 @@ var Instructions = [256]instruction{
 	// NOP - Zero Page 
 	instruction{
 		"NOP",
+		NOP,
 		0x64,
 		2,
 		3,
@@ -811,6 +995,7 @@ var Instructions = [256]instruction{
 	// ADC - Zero Page
 	instruction{
 		"ADC",
+		ADC,
 		0x65,
 		2,
 		3,
@@ -818,6 +1003,7 @@ var Instructions = [256]instruction{
 	// ROR - Zero Page 
 	instruction{
 		"ROR",
+		ROR,
 		0x66,
 		2,
 		5,
@@ -825,6 +1011,7 @@ var Instructions = [256]instruction{
 	// RRA - Zero Page 
 	instruction{
 		"RRA",
+		RRA,
 		0x67,
 		2,
 		5,
@@ -832,6 +1019,7 @@ var Instructions = [256]instruction{
 	// PLA - Implied 
 	instruction{
 		"PLA",
+		PLA,
 		0x68,
 		1,
 		4,
@@ -839,6 +1027,7 @@ var Instructions = [256]instruction{
 	// ADC - Immediate 
 	instruction{
 		"ADC",
+		ADC,
 		0x69,
 		2,
 		2,
@@ -846,6 +1035,7 @@ var Instructions = [256]instruction{
 	// ROR - Accumulator 
 	instruction{
 		"ROR",
+		ROR,
 		0x6A,
 		1,
 		2,
@@ -853,6 +1043,7 @@ var Instructions = [256]instruction{
 	// ARR - Immediate 
 	instruction{
 		"ARR",
+		ARR,
 		0x6B,
 		2,
 		2,
@@ -860,6 +1051,7 @@ var Instructions = [256]instruction{
 	// JMP - Indirect 
 	instruction{
 		"JMP",
+		JMP,
 		0x6C,
 		3,
 		5,
@@ -867,6 +1059,7 @@ var Instructions = [256]instruction{
 	// ADC - Absolute 
 	instruction{
 		"ADC",
+		ADC,
 		0x6D,
 		3,
 		4,
@@ -874,6 +1067,7 @@ var Instructions = [256]instruction{
 	// ROR - Absolute 
 	instruction{
 		"ROR",
+		ROR,
 		0x6E,
 		3,
 		6,
@@ -881,6 +1075,7 @@ var Instructions = [256]instruction{
 	// RRA - Absolute 
 	instruction{
 		"RRA",
+		RRA,
 		0x6F,
 		3,
 		6,
@@ -888,6 +1083,7 @@ var Instructions = [256]instruction{
 	// BVS - Relative 
 	instruction{
 		"BVS",
+		BVS,
 		0x70,
 		2,
 		2,
@@ -895,6 +1091,7 @@ var Instructions = [256]instruction{
 	// ADC - (Indirect), Y
 	instruction{
 		"ADC",
+		ADC,
 		0x71,
 		2,
 		5,
@@ -902,6 +1099,7 @@ var Instructions = [256]instruction{
 	// KIL - Implied 
 	instruction{
 		"KIL",
+		KIL,
 		0x72,
 		1,
 		9,
@@ -909,6 +1107,7 @@ var Instructions = [256]instruction{
 	// RRA - (Indirect), Y
 	instruction{
 		"RRA",
+		RRA,
 		0x73,
 		2,
 		8,
@@ -916,6 +1115,7 @@ var Instructions = [256]instruction{
 	// NOP - Zero Page X
 	instruction{
 		"NOP",
+		NOP,
 		0x74,
 		2,
 		4,
@@ -923,6 +1123,7 @@ var Instructions = [256]instruction{
 	// ADC - Zero Page 
 	instruction{
 		"ADC",
+		ADC,
 		0x75,
 		2,
 		3,
@@ -930,6 +1131,7 @@ var Instructions = [256]instruction{
 	// ROR - Zero Page X
 	instruction{
 		"ROR",
+		ROR,
 		0x76,
 		2,
 		6,
@@ -937,6 +1139,7 @@ var Instructions = [256]instruction{
 	// RRA - Zero Page X 
 	instruction{
 		"RRA",
+		RRA,
 		0x77,
 		2,
 		6,
@@ -944,6 +1147,7 @@ var Instructions = [256]instruction{
 	// SEI - Implied 
 	instruction{
 		"SEI",
+		SEI,
 		0x78,
 		1,
 		2,
@@ -951,6 +1155,7 @@ var Instructions = [256]instruction{
 	// ADC - Absolute Y
 	instruction{
 		"ADC",
+		ADC,
 		0x79,
 		3,
 		4,
@@ -958,6 +1163,7 @@ var Instructions = [256]instruction{
 	// NOP - Implied 
 	instruction{
 		"NOP",
+		NOP,
 		0x7A,
 		1,
 		2,
@@ -965,6 +1171,7 @@ var Instructions = [256]instruction{
 	// RRA - Absolute Y
 	instruction{
 		"RRA",
+		RRA,
 		0x7B,
 		3,
 		7,
@@ -972,6 +1179,7 @@ var Instructions = [256]instruction{
 	// NOP - Absolute X
 	instruction{
 		"NOP",
+		NOP,
 		0x7C,
 		3,
 		4,
@@ -979,6 +1187,7 @@ var Instructions = [256]instruction{
 	// ADC - Absolute X
 	instruction{
 		"ADC",
+		ADC,
 		0x7D,
 		3,
 		4,
@@ -986,6 +1195,7 @@ var Instructions = [256]instruction{
 	// ROR - Absolute X
 	instruction{
 		"ROR",
+		ROR,
 		0x7E,
 		3,
 		7,
@@ -993,6 +1203,7 @@ var Instructions = [256]instruction{
 	// RRA - Absolute X
 	instruction{
 		"RRA",
+		RRA,
 		0x7F,
 		3,
 		7,
@@ -1000,6 +1211,7 @@ var Instructions = [256]instruction{
 	// NOP - Immediate 
 	instruction{
 		"NOP",
+		NOP,
 		0x80,
 		2,
 		2,
@@ -1007,6 +1219,7 @@ var Instructions = [256]instruction{
 	// STA - (Indirect, X) 
 	instruction{
 		"STA",
+		STA,
 		0x81,
 		2,
 		6,
@@ -1014,6 +1227,7 @@ var Instructions = [256]instruction{
 	// NOP - Immediate 
 	instruction{
 		"NOP",
+		NOP,
 		0x82,
 		2,
 		2,
@@ -1021,6 +1235,7 @@ var Instructions = [256]instruction{
 	// SAX - (Indirect, X) 
 	instruction{
 		"SAX",
+		SAX,
 		0x83,
 		2,
 		6,
@@ -1028,6 +1243,7 @@ var Instructions = [256]instruction{
 	// STY - Zero Page 
 	instruction{
 		"STY",
+		STY,
 		0x84,
 		2,
 		3,
@@ -1035,6 +1251,7 @@ var Instructions = [256]instruction{
 	// STA - Zero Page 
 	instruction{
 		"STA",
+		STA,
 		0x85,
 		2,
 		3,
@@ -1042,6 +1259,7 @@ var Instructions = [256]instruction{
 	// STX - Zero Page 
 	instruction{
 		"STX",
+		STX,
 		0x86,
 		2,
 		3,
@@ -1049,6 +1267,7 @@ var Instructions = [256]instruction{
 	// SAX - Zero Page 
 	instruction{
 		"SAX",
+		SAX,
 		0x87,
 		2,
 		3,
@@ -1056,6 +1275,7 @@ var Instructions = [256]instruction{
 	// DEY - Implied 
 	instruction{
 		"DEY",
+		DEY,
 		0x88,
 		1,
 		2,
@@ -1063,6 +1283,7 @@ var Instructions = [256]instruction{
 	// NOP - Immediate 
 	instruction{
 		"NOP",
+		NOP,
 		0x89,
 		2,
 		2,
@@ -1070,6 +1291,7 @@ var Instructions = [256]instruction{
 	// TXA - Implied 
 	instruction{
 		"TXA",
+		TXA,
 		0x8A,
 		1,
 		2,
@@ -1077,6 +1299,7 @@ var Instructions = [256]instruction{
 	// XAA - Immediate 
 	instruction{
 		"XAA",
+		XAA,
 		0x8B,
 		2,
 		2,
@@ -1084,6 +1307,7 @@ var Instructions = [256]instruction{
 	// STY - Absolute 
 	instruction{
 		"STY",
+		STY,
 		0x8C,
 		3,
 		4,
@@ -1091,6 +1315,7 @@ var Instructions = [256]instruction{
 	// STA - Absolute 
 	instruction{
 		"STA",
+		STA,
 		0x8D,
 		3,
 		4,
@@ -1098,6 +1323,7 @@ var Instructions = [256]instruction{
 	// STX - Absolute 
 	instruction{
 		"STX",
+		STX,
 		0x8E,
 		3,
 		4,
@@ -1105,6 +1331,7 @@ var Instructions = [256]instruction{
 	// SAX - Absolute 
 	instruction{
 		"SAX",
+		SAX,
 		0x8F,
 		3,
 		4,
@@ -1112,6 +1339,7 @@ var Instructions = [256]instruction{
 	// BCC - Relative 
 	instruction{
 		"BCC",
+		BCC,
 		0x90,
 		2,
 		2,
@@ -1119,6 +1347,7 @@ var Instructions = [256]instruction{
 	// STA - (Indirect), Y 
 	instruction{
 		"STA",
+		STA,
 		0x91,
 		2,
 		6,
@@ -1126,6 +1355,7 @@ var Instructions = [256]instruction{
 	// KIL - Implied 
 	instruction{
 		"KIL",
+		KIL,
 		0x92,
 		1,
 		0,
@@ -1133,6 +1363,7 @@ var Instructions = [256]instruction{
 	// AXA - (Indirect), Y 
 	instruction{
 		"AXA",
+		AXA,
 		0x93,
 		2,
 		6,
@@ -1140,6 +1371,7 @@ var Instructions = [256]instruction{
 	// STY - Zero Page X 
 	instruction{
 		"STY",
+		STY,
 		0x94,
 		2,
 		4,
@@ -1147,6 +1379,7 @@ var Instructions = [256]instruction{
 	// STA - Zero Page X 
 	instruction{
 		"STA",
+		STA,
 		0x95,
 		2,
 		4,
@@ -1154,6 +1387,7 @@ var Instructions = [256]instruction{
 	// STX - Zero Page Y 
 	instruction{
 		"STX",
+		STX,
 		0x96,
 		2,
 		4,
@@ -1161,6 +1395,7 @@ var Instructions = [256]instruction{
 	// SAX - Zero Page Y 
 	instruction{
 		"SAX",
+		SAX,
 		0x97,
 		2,
 		4,
@@ -1168,6 +1403,7 @@ var Instructions = [256]instruction{
 	// TYA - Implied 
 	instruction{
 		"TYA",
+		TYA,
 		0x98,
 		1,
 		2,
@@ -1175,6 +1411,7 @@ var Instructions = [256]instruction{
 	// STA - Absolute Y 
 	instruction{
 		"STA",
+		STA,
 		0x99,
 		3,
 		5,
@@ -1182,6 +1419,7 @@ var Instructions = [256]instruction{
 	// TXS - Implied 
 	instruction{
 		"TXS",
+		TXS,
 		0x9A,
 		1,
 		2,
@@ -1189,6 +1427,7 @@ var Instructions = [256]instruction{
 	// TAS - Absolute Y
 	instruction{
 		"TAS",
+		TAS,
 		0x9B,
 		3,
 		5,
@@ -1196,6 +1435,7 @@ var Instructions = [256]instruction{
 	// SHY - Absolute X
 	instruction{
 		"SHY",
+		SHY,
 		0x9C,
 		3,
 		5,
@@ -1203,6 +1443,7 @@ var Instructions = [256]instruction{
 	// STA - Absolute X
 	instruction{
 		"STA",
+		STA,
 		0x9D,
 		3,
 		5,
@@ -1210,6 +1451,7 @@ var Instructions = [256]instruction{
 	// SHX - Absolute Y
 	instruction{
 		"SHX",
+		SHX,
 		0x9E,
 		3,
 		5,
@@ -1217,6 +1459,7 @@ var Instructions = [256]instruction{
 	// EOR - Absolute 
 	instruction{
 		"EOR",
+		EOR,
 		0x9F,
 		3,
 		4,
@@ -1224,6 +1467,7 @@ var Instructions = [256]instruction{
 	// LDY - Immediate 
 	instruction{
 		"LDY",
+		LDY,
 		0xA0,
 		2,
 		3,
@@ -1231,6 +1475,7 @@ var Instructions = [256]instruction{
 	// LDA - (Indirect, X) 
 	instruction{
 		"LDA",
+		LDA,
 		0xA1,
 		2,
 		6,
@@ -1238,6 +1483,7 @@ var Instructions = [256]instruction{
 	// LDX - Immediate 
 	instruction{
 		"LDX",
+		LDX,
 		0xA2,
 		2,
 		2,
@@ -1245,6 +1491,7 @@ var Instructions = [256]instruction{
 	// LAX - (Indirect, X) 
 	instruction{
 		"LAX",
+		LAX,
 		0xA3,
 		2,
 		6,
@@ -1252,6 +1499,7 @@ var Instructions = [256]instruction{
 	// LDY - Zero Page 
 	instruction{
 		"LDY",
+		LDY,
 		0xA4,
 		2,
 		3,
@@ -1259,6 +1507,7 @@ var Instructions = [256]instruction{
 	// LDA - Zero Page 
 	instruction{
 		"LDA",
+		LDA,
 		0xA5,
 		2,
 		3,
@@ -1266,6 +1515,7 @@ var Instructions = [256]instruction{
 	// LDX - Zero Page 
 	instruction{
 		"LDX",
+		LDX,
 		0xA6,
 		2,
 		3,
@@ -1273,6 +1523,7 @@ var Instructions = [256]instruction{
 	// LAX - Zero Page 
 	instruction{
 		"LAX",
+		LAX,
 		0xA7,
 		2,
 		3,
@@ -1280,6 +1531,7 @@ var Instructions = [256]instruction{
 	// TAY - Implied 
 	instruction{
 		"TAY",
+		TAY,
 		0xA8,
 		1,
 		2,
@@ -1287,6 +1539,7 @@ var Instructions = [256]instruction{
 	// LDA - Immediate 
 	instruction{
 		"LDA",
+		LDA,
 		0xA9,
 		2,
 		2,
@@ -1294,6 +1547,7 @@ var Instructions = [256]instruction{
 	// TAX - Implied 
 	instruction{
 		"TAX",
+		TAX,
 		0xAA,
 		1,
 		2,
@@ -1301,6 +1555,7 @@ var Instructions = [256]instruction{
 	// LAX - Immediate 
 	instruction{
 		"LAX",
+		LAX,
 		0xAB,
 		2,
 		2,
@@ -1308,6 +1563,7 @@ var Instructions = [256]instruction{
 	// LDY - Absolute 
 	instruction{
 		"LDY",
+		LDY,
 		0xAC,
 		3,
 		4,
@@ -1315,6 +1571,7 @@ var Instructions = [256]instruction{
 	// LDA - Absolute 
 	instruction{
 		"LDA",
+		LDA,
 		0xAD,
 		3,
 		4,
@@ -1322,6 +1579,7 @@ var Instructions = [256]instruction{
 	// LDX - Absolute 
 	instruction{
 		"LDX",
+		LDX,
 		0xAE,
 		3,
 		4,
@@ -1329,6 +1587,7 @@ var Instructions = [256]instruction{
 	// LAX - Absolute 
 	instruction{
 		"LAX",
+		LAX,
 		0xAF,
 		3,
 		4,
@@ -1336,6 +1595,7 @@ var Instructions = [256]instruction{
 	// BCS - Relative 
 	instruction{
 		"BCS",
+		BCS,
 		0xB0,
 		2,
 		2,
@@ -1343,6 +1603,7 @@ var Instructions = [256]instruction{
 	// LDA - (Indirect), Y 
 	instruction{
 		"LDA",
+		LDA,
 		0xB1,
 		2,
 		5,
@@ -1350,6 +1611,7 @@ var Instructions = [256]instruction{
 	// KIL - Implied 
 	instruction{
 		"KIL",
+		KIL,
 		0xB2,
 		1,
 		0,
@@ -1357,6 +1619,7 @@ var Instructions = [256]instruction{
 	// LAX - (Indirect), Y 
 	instruction{
 		"LAX",
+		LAX,
 		0xB3,
 		2,
 		5,
@@ -1364,6 +1627,7 @@ var Instructions = [256]instruction{
 	// LDY - Zero Page X 
 	instruction{
 		"LDY",
+		LDY,
 		0xB4,
 		2,
 		4,
@@ -1371,6 +1635,7 @@ var Instructions = [256]instruction{
 	// LDA - Zero Page X 
 	instruction{
 		"LDA",
+		LDA,
 		0xB5,
 		2,
 		4,
@@ -1378,6 +1643,7 @@ var Instructions = [256]instruction{
 	// LDX - Zero Page Y 
 	instruction{
 		"LDX",
+		LDX,
 		0xB6,
 		2,
 		4,
@@ -1385,6 +1651,7 @@ var Instructions = [256]instruction{
 	// LAX - Zero Page Y 
 	instruction{
 		"LAX",
+		LAX,
 		0xB7,
 		2,
 		4,
@@ -1392,6 +1659,7 @@ var Instructions = [256]instruction{
 	// CLV - Implied 
 	instruction{
 		"CLV",
+		CLV,
 		0xB8,
 		1,
 		2,
@@ -1399,6 +1667,7 @@ var Instructions = [256]instruction{
 	// LDA - Absolute Y
 	instruction{
 		"LDA",
+		LDA,
 		0xB9,
 		3,
 		4,
@@ -1406,6 +1675,7 @@ var Instructions = [256]instruction{
 	// TSX - Implied 
 	instruction{
 		"TSX",
+		TSX,
 		0xBA,
 		1,
 		2,
@@ -1413,6 +1683,7 @@ var Instructions = [256]instruction{
 	// LAS - Absolute Y
 	instruction{
 		"LAS",
+		LAS,
 		0xBB,
 		3,
 		4,
@@ -1420,6 +1691,7 @@ var Instructions = [256]instruction{
 	// LDY - Absolute X
 	instruction{
 		"LDY",
+		LDY,
 		0xBC,
 		3,
 		4,
@@ -1427,6 +1699,7 @@ var Instructions = [256]instruction{
 	// LDA - Absolute X
 	instruction{
 		"LDA",
+		LDA,
 		0xBD,
 		3,
 		4,
@@ -1434,6 +1707,7 @@ var Instructions = [256]instruction{
 	// LDX - Absolute Y
 	instruction{
 		"LDX",
+		LDX,
 		0xBE,
 		3,
 		4,
@@ -1441,6 +1715,7 @@ var Instructions = [256]instruction{
 	// LAX - Absolute Y
 	instruction{
 		"LAX",
+		LAX,
 		0xBF,
 		3,
 		4,
@@ -1448,6 +1723,7 @@ var Instructions = [256]instruction{
 	// CPY - Immediate 
 	instruction{
 		"CPY",
+		CPY,
 		0xC0,
 		2,
 		2,
@@ -1455,6 +1731,7 @@ var Instructions = [256]instruction{
 	// CMP - (Indirect, X) 
 	instruction{
 		"CMP",
+		CMP,
 		0xC1,
 		2,
 		6,
@@ -1462,6 +1739,7 @@ var Instructions = [256]instruction{
 	// NOP - Immediate 
 	instruction{
 		"NOP",
+		NOP,
 		0xC2,
 		2,
 		2,
@@ -1469,6 +1747,7 @@ var Instructions = [256]instruction{
 	// DCP - (Indirect, X) 
 	instruction{
 		"DCP",
+		DCP,
 		0xC3,
 		2,
 		8,
@@ -1476,6 +1755,7 @@ var Instructions = [256]instruction{
 	// CPY - Zero Page 
 	instruction{
 		"CPY",
+		CPY,
 		0xC4,
 		2,
 		3,
@@ -1483,6 +1763,7 @@ var Instructions = [256]instruction{
 	// CMP - Zero Page 
 	instruction{
 		"CMP",
+		CMP,
 		0xC5,
 		2,
 		3,
@@ -1490,6 +1771,7 @@ var Instructions = [256]instruction{
 	// DEC - Zero Page 
 	instruction{
 		"DEC",
+		DEC,
 		0xC6,
 		2,
 		5,
@@ -1497,6 +1779,7 @@ var Instructions = [256]instruction{
 	// DCP - Zero Page 
 	instruction{
 		"DCP",
+		DCP,
 		0xC7,
 		2,
 		5,
@@ -1504,6 +1787,7 @@ var Instructions = [256]instruction{
 	// INY - Implied 
 	instruction{
 		"INY",
+		INY,
 		0xC8,
 		1,
 		2,
@@ -1511,6 +1795,7 @@ var Instructions = [256]instruction{
 	// CPY - Immediate 
 	instruction{
 		"CMP",
+		CMP,
 		0xC9,
 		2,
 		2,
@@ -1518,6 +1803,7 @@ var Instructions = [256]instruction{
 	// DEX - Implied 
 	instruction{
 		"DEX",
+		DEX,
 		0xCA,
 		1,
 		2,
@@ -1525,6 +1811,7 @@ var Instructions = [256]instruction{
 	// AXS - Immediate 
 	instruction{
 		"AXS",
+		AXS,
 		0xCB,
 		2,
 		2,
@@ -1532,6 +1819,7 @@ var Instructions = [256]instruction{
 	// CPY - Absolute 
 	instruction{
 		"CPY",
+		CPY,
 		0xCC,
 		3,
 		4,
@@ -1539,6 +1827,7 @@ var Instructions = [256]instruction{
 	// CMP - Absolute 
 	instruction{
 		"CMP",
+		CMP,
 		0xCD,
 		3,
 		4,
@@ -1546,6 +1835,7 @@ var Instructions = [256]instruction{
 	// DEC - Absolute 
 	instruction{
 		"DEC",
+		DEC,
 		0xCE,
 		3,
 		3,
@@ -1553,6 +1843,7 @@ var Instructions = [256]instruction{
 	// DCP - Absolute 
 	instruction{
 		"DCP",
+		DCP,
 		0xCF,
 		3,
 		6,
@@ -1560,6 +1851,7 @@ var Instructions = [256]instruction{
 	// BNE - Relative 
 	instruction{
 		"BNE",
+		BNE,
 		0xD0,
 		2,
 		2,
@@ -1567,6 +1859,7 @@ var Instructions = [256]instruction{
 	// CMP - (Indirect), Y
 	instruction{
 		"CMP",
+		CMP,
 		0xD1,
 		2,
 		5,
@@ -1574,6 +1867,7 @@ var Instructions = [256]instruction{
 	// KIL - Implied 
 	instruction{
 		"KIL",
+		KIL,
 		0xD2,
 		1,
 		0,
@@ -1581,6 +1875,7 @@ var Instructions = [256]instruction{
 	// DCP - (Indirect), Y 
 	instruction{
 		"DCP",
+		DCP,
 		0xD3,
 		2,
 		8,
@@ -1588,6 +1883,7 @@ var Instructions = [256]instruction{
 	// NOP - Zero Page X 
 	instruction{
 		"NOP",
+		NOP,
 		0xD4,
 		2,
 		4,
@@ -1595,6 +1891,7 @@ var Instructions = [256]instruction{
 	// CMP - Zero Page X 
 	instruction{
 		"CMP",
+		CMP,
 		0xD5,
 		2,
 		4,
@@ -1602,6 +1899,7 @@ var Instructions = [256]instruction{
 	// DEC - Zero Page X 
 	instruction{
 		"DEC",
+		DEC,
 		0xD6,
 		2,
 		6,
@@ -1609,6 +1907,7 @@ var Instructions = [256]instruction{
 	// DCP - Zero Page X 
 	instruction{
 		"DCP",
+		DCP,
 		0xD7,
 		2,
 		6,
@@ -1616,6 +1915,7 @@ var Instructions = [256]instruction{
 	// CLD - Implied 
 	instruction{
 		"CLD",
+		CLD,
 		0xD8,
 		1,
 		2,
@@ -1623,6 +1923,7 @@ var Instructions = [256]instruction{
 	// CMP - Absolute Y
 	instruction{
 		"CMP",
+		CMP,
 		0xD9,
 		3,
 		4,
@@ -1630,6 +1931,7 @@ var Instructions = [256]instruction{
 	// NOP - Implied 
 	instruction{
 		"NOP",
+		NOP,
 		0xDA,
 		1,
 		2,
@@ -1637,6 +1939,7 @@ var Instructions = [256]instruction{
 	// DCP - Absolute Y
 	instruction{
 		"DCP",
+		DCP,
 		0xDB,
 		3,
 		7,
@@ -1644,6 +1947,7 @@ var Instructions = [256]instruction{
 	// NOP - Absolute X
 	instruction{
 		"NOP",
+		NOP,
 		0xDC,
 		3,
 		4,
@@ -1651,6 +1955,7 @@ var Instructions = [256]instruction{
 	// CMP - Absolute X
 	instruction{
 		"CMP",
+		CMP,
 		0xDD,
 		3,
 		4,
@@ -1658,6 +1963,7 @@ var Instructions = [256]instruction{
 	// DEC - Absolute X
 	instruction{
 		"DEC",
+		DEC,
 		0xDE,
 		3,
 		7,
@@ -1665,6 +1971,7 @@ var Instructions = [256]instruction{
 	// DCP - Absolute X
 	instruction{
 		"DCP",
+		DCP,
 		0xDF,
 		3,
 		7,
@@ -1672,6 +1979,7 @@ var Instructions = [256]instruction{
 	// CPX - Immediate 
 	instruction{
 		"CPX",
+		CPX,
 		0xE0,
 		2,
 		2,
@@ -1679,6 +1987,7 @@ var Instructions = [256]instruction{
 	// SBC - (Indirect, X) 
 	instruction{
 		"SBC",
+		SBC,
 		0xE1,
 		2,
 		6,
@@ -1686,6 +1995,7 @@ var Instructions = [256]instruction{
 	// NOP - Immediate 
 	instruction{
 		"NOP",
+		NOP,
 		0xE2,
 		2,
 		2,
@@ -1693,6 +2003,7 @@ var Instructions = [256]instruction{
 	// ISC - (Indirect, X) 
 	instruction{
 		"ISC",
+		ISC,
 		0xE3,
 		2,
 		8,
@@ -1700,6 +2011,7 @@ var Instructions = [256]instruction{
 	// CPX - Zero Page 
 	instruction{
 		"CPX",
+		CPX,
 		0xE4,
 		2,
 		3,
@@ -1707,6 +2019,7 @@ var Instructions = [256]instruction{
 	// SBC - Zero Page 
 	instruction{
 		"SBC",
+		SBC,
 		0xE5,
 		2,
 		3,
@@ -1714,6 +2027,7 @@ var Instructions = [256]instruction{
 	// INC - Zero Page 
 	instruction{
 		"INC",
+		INC,
 		0xE6,
 		2,
 		5,
@@ -1721,6 +2035,7 @@ var Instructions = [256]instruction{
 	// ISC - Zero Page 
 	instruction{
 		"ISC",
+		ISC,
 		0xE7,
 		2,
 		5,
@@ -1728,6 +2043,7 @@ var Instructions = [256]instruction{
 	// INX - Implied 
 	instruction{
 		"INX",
+		INX,
 		0xE8,
 		1,
 		2,
@@ -1735,6 +2051,7 @@ var Instructions = [256]instruction{
 	// SBC - Immediate 
 	instruction{
 		"SBC",
+		SBC,
 		0xE9,
 		2,
 		2,
@@ -1742,6 +2059,7 @@ var Instructions = [256]instruction{
 	// NOP - Implied
 	instruction{
 		"NOP",
+		NOP,
 		0xEA,
 		1,
 		2,
@@ -1749,6 +2067,7 @@ var Instructions = [256]instruction{
 	// SBC - Immediate 
 	instruction{
 		"SBC",
+		SBC,
 		0xEB,
 		2,
 		2,
@@ -1756,6 +2075,7 @@ var Instructions = [256]instruction{
 	// CPX - Absolute 
 	instruction{
 		"CPX",
+		CPX,
 		0xEC,
 		3,
 		4,
@@ -1763,6 +2083,7 @@ var Instructions = [256]instruction{
 	// SBC - Absolute 
 	instruction{
 		"SBC",
+		SBC,
 		0xED,
 		3,
 		4,
@@ -1770,6 +2091,7 @@ var Instructions = [256]instruction{
 	// INC - Absolute 
 	instruction{
 		"INC",
+		INC,
 		0xEE,
 		3,
 		6,
@@ -1777,6 +2099,7 @@ var Instructions = [256]instruction{
 	// ISC - Absolute 
 	instruction{
 		"ISC",
+		ISC,
 		0xEF,
 		3,
 		6,
@@ -1784,6 +2107,7 @@ var Instructions = [256]instruction{
 	// BEQ - Relative 
 	instruction{
 		"BEQ",
+		BEQ,
 		0xF0,
 		2,
 		2,
@@ -1791,6 +2115,7 @@ var Instructions = [256]instruction{
 	// SBC - (Indirect), Y
 	instruction{
 		"SBC",
+		SBC,
 		0xF1,
 		2,
 		5,
@@ -1798,6 +2123,7 @@ var Instructions = [256]instruction{
 	// KIL - Implied 
 	instruction{
 		"KIL",
+		KIL,
 		0xF2,
 		1,
 		0,
@@ -1805,6 +2131,7 @@ var Instructions = [256]instruction{
 	// ISC - (Indirect), Y 
 	instruction{
 		"ISC",
+		ISC,
 		0xF3,
 		2,
 		8,
@@ -1812,6 +2139,7 @@ var Instructions = [256]instruction{
 	// NOP - Zero Page X 
 	instruction{
 		"NOP",
+		NOP,
 		0xF4,
 		2,
 		4,
@@ -1819,6 +2147,7 @@ var Instructions = [256]instruction{
 	// SBC - Zero Page X 
 	instruction{
 		"SBC",
+		SBC,
 		0xF5,
 		2,
 		4,
@@ -1826,6 +2155,7 @@ var Instructions = [256]instruction{
 	// INC - Zero Page X 
 	instruction{
 		"INC",
+		INC,
 		0xF6,
 		2,
 		6,
@@ -1833,6 +2163,7 @@ var Instructions = [256]instruction{
 	// ISC - Zero Page X 
 	instruction{
 		"ISC",
+		ISC,
 		0xF7,
 		2,
 		6,
@@ -1840,6 +2171,7 @@ var Instructions = [256]instruction{
 	// SED - Implied 
 	instruction{
 		"SED",
+		SED,
 		0xF8,
 		1,
 		2,
@@ -1847,6 +2179,7 @@ var Instructions = [256]instruction{
 	// SBC - Absolute Y
 	instruction{
 		"SBC",
+		SBC,
 		0xF9,
 		3,
 		4,
@@ -1854,6 +2187,7 @@ var Instructions = [256]instruction{
 	// NOP - Implied 
 	instruction{
 		"NOP",
+		NOP,
 		0xFA,
 		1,
 		2,
@@ -1861,6 +2195,7 @@ var Instructions = [256]instruction{
 	// ISC - Absolute Y
 	instruction{
 		"ISC",
+		ISC,
 		0xFB,
 		3,
 		7,
@@ -1868,6 +2203,7 @@ var Instructions = [256]instruction{
 	// NOP - Absolute X
 	instruction{
 		"NOP",
+		NOP,
 		0xFC,
 		3,
 		4,
@@ -1875,6 +2211,7 @@ var Instructions = [256]instruction{
 	// SBC - Absolute X
 	instruction{
 		"SBC",
+		SBC,
 		0xFD,
 		3,
 		4,
@@ -1882,6 +2219,7 @@ var Instructions = [256]instruction{
 	// INC - Absolute X 
 	instruction{
 		"INC",
+		INC,
 		0xFE,
 		3,
 		7,
@@ -1889,6 +2227,7 @@ var Instructions = [256]instruction{
 	// ISC - Absolute X
 	instruction{
 		"ISC",
+		ISC,
 		0xFF,
 		3,
 		7,
