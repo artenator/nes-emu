@@ -65,6 +65,7 @@ type Pulse struct {
 	baseAddr uint16
 	targetTimer uint16
 	curTimer uint16
+	lengthTimer uint8
 	curDutyIdx uint8
 }
 
@@ -145,8 +146,8 @@ func (apu *Apu) InitAPU(initContext bool) {
 	apu.pulse1Addr = 0x4000
 	apu.pulse2Addr = 0x4004
 
-	apu.pulse1 = Pulse{apu, &apu.sweep1,apu.pulse1Addr, 0, 0, 0}
-	apu.pulse2 = Pulse{apu,&apu.sweep2,apu.pulse2Addr, 0, 0, 0}
+	apu.pulse1 = Pulse{apu, &apu.sweep1,apu.pulse1Addr, 0, 0, 0, 0}
+	apu.pulse2 = Pulse{apu,&apu.sweep2,apu.pulse2Addr, 0, 0, 0, 0}
 
 	apu.sweep1Addr = 0x4001
 	apu.sweep2Addr = 0x4005
@@ -221,7 +222,7 @@ func (sweep *Sweep) setSweepValues(sweepValue uint8) {
 
 func (sweep *Sweep) silence() bool {
 	targetPeriod := sweep.pulse.curTimer + (sweep.pulse.curTimer >> sweep.shiftCounter)
-	if sweep.pulse.curTimer < 8 || (!sweep.negate && targetPeriod > 0x7FF) {
+	if sweep.pulse.curTimer < 8 || (!sweep.negate && targetPeriod > 0x7FF)  {
 		return true
 	} else {
 		return false
@@ -314,6 +315,12 @@ func (pulse *Pulse) getPulTimer() uint16{
 func (pulse *Pulse) setTargetTimer() {
 	pulse.targetTimer = pulse.getPulTimer()
 	pulse.curTimer = pulse.targetTimer
+	pulse.lengthTimer = lengthTable[pulse.apu.nes.CPU.Memory[pulse.baseAddr + 3] >> 3 & 0x1F]
+}
+
+func (pulse *Pulse) getHalt() bool {
+	baseAddr := pulse.baseAddr
+	return ((pulse.apu.nes.CPU.Memory[baseAddr] >> 5) & 0x01) == 0x01
 }
 
 func (pulse *Pulse) pulseRun() uint8 {
@@ -327,25 +334,31 @@ func (pulse *Pulse) pulseRun() uint8 {
 	return pulse.out()
 }
 
+func (pulse *Pulse) runLengthTimer() {
+	if !pulse.getHalt() && pulse.lengthTimer > 0 {
+		pulse.lengthTimer--
+	}
+}
+
 func (apu *Apu) APURun() float64 {
 	var p1out, p2out, triout uint8
 
 	apu.pulse1.pulseRun()
 	apu.pulse2.pulseRun()
 
-	if apu.enablePulseChannel1 && !apu.sweep1.silence() {
+	if apu.enablePulseChannel1 && !apu.sweep1.silence() && apu.pulse1.lengthTimer > 0 {
 		p1out = apu.pulse1.out()
 	} else {
 		p1out = 0
 	}
 
-	if apu.enablePulseChannel2 && !apu.sweep2.silence() {
+	if apu.enablePulseChannel2 && !apu.sweep2.silence() && apu.pulse2.lengthTimer > 0 {
 		p2out = apu.pulse2.out()
 	} else {
 		p2out = 0
 	}
 
-	if apu.enableTriangle {
+	if apu.enableTriangle && apu.triangle.lengthCounter > 0 {
 		triout = apu.triangle.out()
 	} else {
 		triout = 0
@@ -378,6 +391,8 @@ func (apu *Apu) halfFrame() {
 	apu.sweep1.sweepRun()
 	apu.sweep2.sweepRun()
 	apu.triangle.lengthCounterRun()
+	apu.pulse1.runLengthTimer()
+	apu.pulse2.runLengthTimer()
 }
 
 func (apu *Apu) quarterFrame() {
@@ -439,7 +454,7 @@ func (apu *Apu) averageSoundSamples() float64 {
 
 func (apu *Apu) RunAPUCycles(numOfCycles uint16, lastFPS int) {
 	for i := uint16(0); i < numOfCycles; i++ {
-		if apu.triangle.linearCounter > 0 && apu.triangle.lengthCounter > 0 {
+		if apu.triangle.linearCounter > 0 {
 			apu.triangle.triangleRun()
 		}
 
