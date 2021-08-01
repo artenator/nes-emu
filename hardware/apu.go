@@ -452,8 +452,9 @@ func (apu *Apu) RunAPUCycles(numOfCycles uint16, lastFPS int) {
 		if apu.cyclesPast >= apu.Cyclelimit {
 			apu.cyclesPast = 0
 			apu.audioDevice.Write([]byte{byte(apu.averageSoundSamples() * 0xFF)})
+			apu.audioSamples = apu.audioSamples[:0]
 		} else {
-			apu.audioSamples[apu.cyclesPast] = apu.soundOut
+			apu.audioSamples = append(apu.audioSamples, apu.soundOut)
 			apu.cyclesPast++
 		}
 	}

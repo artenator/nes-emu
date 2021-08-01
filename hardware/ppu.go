@@ -179,24 +179,22 @@ func (ppu *Ppu) ClearVBlank() {
 }
 
 func (ppu *Ppu) get8x8Tile(base uint16, pos uint16) [8][8]uint8 {
-	b0 := []byte{}
+	b0 := [8]byte{}
 	for i := uint16(0); i < 8; i++ {
-		b0 = append(b0, ppu.Read8(base+(pos*0x10)+i))
+		b0[i] = ppu.Read8(base+(pos*0x10)+i)
 	}
-	b1 := []byte{}
+	b1 := [8]byte{}
 	for i := uint16(8); i < 16; i++ {
-		b1 = append(b1, ppu.Read8(base+(pos*0x10)+i))
+		b1[i - 8] = ppu.Read8(base+(pos*0x10)+i)
 	}
 
 	var result [8][8]uint8
 
 	for i := 0; i < 8; i++ {
-		barr0 := b0[i]
-		barr1 := b1[i]
 		for j := uint8(0); j < 8; j++ {
 			var biResult uint8
-			biResult |= (barr0 >> (7 - j)) & 1
-			biResult |= ((barr1 >> (7 - j)) & 1) << 1
+			biResult |= (b0[i] >> (7 - j)) & 1
+			biResult |= ((b1[i] >> (7 - j)) & 1) << 1
 			result[i][j] = biResult
 		}
 	}
